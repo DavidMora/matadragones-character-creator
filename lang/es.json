@@ -105,6 +105,9 @@
       "ArtHint": "Usa tu clave de OpenAI para pintar un retrato a partir de la descripción y lo asigna como imagen del actor y del token prototipo.",
       "PaintingBusy": "Pintando el retrato…",
       "Success": "Creado {name} (nivel {level}).",
+      "SpellsMissing": "{count} conjuro(s) no tenían equivalente en el compendio y se listaron en la ficha: {list}",
+      "UnmatchedSpellsTitle": "Conjuros sin convertir",
+      "UnmatchedSpellsBody": "Estos conjuros impresos no tienen equivalente directo en el compendio de conjuros. Elige sustitutos a mano o descártalos:",
       "ArtSuccess": "Ilustración aplicada a {name}.",
       "ArtFailed": "El actor se creó, pero la generación de la ilustración falló: {message}"
     },

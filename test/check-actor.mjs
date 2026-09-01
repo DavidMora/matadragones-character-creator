@@ -91,4 +91,93 @@ const endToEnd = actorDataFromSpec(convertCreature(parse5eStatBlock(FROST_REAVER
 check('fixture end-to-end item types', [...new Set(endToEnd.items.map((i) => i.type))].sort(), ['action', 'lore', 'melee']);
 check('fixture end-to-end level', endToEnd.system.details.level.value, 9);
 
+// --- Spellcasting realisation ------------------------------------------------
+const { attachSpellcasting, entrySource, spellSource, spellSlug } = await load('spells.js');
+const { GLOOM_CALLER } = await import('./fixtures.mjs');
+
+check('slugging matches pf2e convention', spellSlug("Summoner's Precaution"), 'summoners-precaution');
+
+/** A pretend compendium: knows every spell except vision of death. */
+const fakeCompendium = (name) => (name === 'vision of death' ? null : {
+  _id: 'packid',
+  name: name.replace(/\b\w/g, (ch) => ch.toUpperCase()),
+  type: 'spell',
+  system: {
+    slug: spellSlug(name),
+    level: { value: name === 'caustic blast' || name === 'telekinetic hand' ? 1 : 4 },
+    traits: { value: name === 'caustic blast' || name === 'telekinetic hand' ? ['cantrip'] : [] },
+    location: { value: null },
+  },
+});
+
+/** Records createEmbeddedDocuments calls and hands back ids like Foundry. */
+function fakeActor() {
+  let counter = 0;
+  const items = [];
+  return {
+    items,
+    createEmbeddedDocuments: async (_type, sources) => sources.map((source) => {
+      const created = { ...structuredClone(source), _id: `item${(counter += 1)}` };
+      items.push(created);
+      return created;
+    }),
+  };
+}
+
+const casterSpec = convertCreature(parse5eStatBlock(GLOOM_CALLER).data);
+const target = fakeActor();
+const result = await attachSpellcasting(target, casterSpec, { findSpell: fakeCompendium });
+
+const entryItems = target.items.filter((i) => i.type === 'spellcastingEntry');
+const spellItems = target.items.filter((i) => i.type === 'spell');
+check('both entries created', entryItems.map((i) => [i.name, i.system.prepared.value]),
+  [['Innate Spellcasting', 'innate'], ['Spellcasting', 'spontaneous']]);
+check('entry carries dc/attack/tradition', [
+  entryItems[0].system.spelldc, entryItems[0].system.tradition.value,
+], [{ value: casterSpec.spellcasting.entries[0].attack, dc: casterSpec.spellcasting.entries[0].dc }, 'divine']);
+check('spontaneous entry has its slots', entryItems[1].system.slots, {
+  slot1: { value: 4, max: 4, prepared: [] },
+  slot2: { value: 3, max: 3, prepared: [] },
+  slot3: { value: 2, max: 2, prepared: [] },
+});
+check('unknown spell reported, not invented', result.missing, ['vision of death']);
+check('the rest created and counted', [result.created, spellItems.length], [9, 9]);
+
+const filedUnder = new Set(spellItems.map((s) => s.system.location.value));
+check('spells filed under their entries', [...filedUnder].sort(), [entryItems[0]._id, entryItems[1]._id].sort());
+
+const atWill = spellItems.find((s) => s.name.startsWith('Translocate'));
+check('at-will leveled spell suffixed like official data, no uses',
+  [atWill.name, atWill.system.location.uses], ['Translocate (At Will)', undefined]);
+const perDay = spellItems.find((s) => s.name.startsWith('Paralyze'));
+check('per-day spell carries uses', perDay.system.location.uses, { value: 3, max: 3 });
+const cantrip = spellItems.find((s) => s.name.startsWith('Telekinetic Hand'));
+check('cantrip needs no suffix and no uses',
+  [cantrip.name, cantrip.system.location.uses], ['Telekinetic Hand', undefined]);
+check('cloned source drops its compendium id', spellItems.every((s) => s._id.startsWith('item')), true);
+
+// The pure builders behave without an actor in the room.
+const entry = entrySource({ name: 'X', category: 'innate', tradition: 'occult', ability: 'cha', dc: 20, attack: 12, slots: {}, spells: [] });
+check('innate entry omits slots entirely', 'slots' in entry.system, false);
+const constant = spellSource(fakeCompendium('mist'), 'e1', { name: 'mist', uses: null, atWill: false, constant: true });
+check('constant spells suffixed', constant.name, 'Mist (Constant)');
+
+// A spec with real entries must not also get the prose Spellcasting note...
+const casterData = actorDataFromSpec(casterSpec);
+check('no prose spellcasting note beside real entries',
+  casterData.items.some((i) => i.type === 'action' && i.name === 'Spellcasting'), false);
+// ...while a DC-only creature (no parseable list) still gets the note.
+check('DC-only creature keeps the note',
+  actorDataFromSpec(SAMPLE_SPEC).items.some((i) => i.name === 'Spellcasting'), true);
+
+check('attack effects reach the melee item',
+  actorDataFromSpec(casterSpec).items.find((i) => i.type === 'melee').system.attackEffects.value, ['grab']);
+
+// No spellcasting, no calls: a spell-less spec touches nothing.
+const untouched = fakeActor();
+check('spell-less spec makes no embedded calls',
+  await attachSpellcasting(untouched, convertCreature(parse5eStatBlock(FROST_REAVER).data), { findSpell: fakeCompendium }),
+  { created: 0, missing: [] });
+check('spell-less actor has no items added', untouched.items.length, 0);
+
 done('actor payloads match the pf2e schemas');

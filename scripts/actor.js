@@ -10,6 +10,7 @@
  * are legacy); abilities are `action` items with `actionType`/`actions`.
  */
 import { MODULE_ID } from './constants.js';
+import { attachSpellcasting } from './spells.js';
 
 const escapeHTML = (s) => String(s).replace(/[&<>"']/g, (c) => (
   { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
@@ -49,7 +50,7 @@ export function actorDataFromSpec(spec) {
         bonus: { value: strike.bonus },
         damageRolls,
         traits: { value: strike.traits ?? [] },
-        attackEffects: { value: [] },
+        attackEffects: { value: strike.attackEffects ?? [] },
         range: strike.rangeIncrement
           ? { increment: strike.rangeIncrement, max: strike.rangeMax ?? null }
           : null,
@@ -81,7 +82,10 @@ export function actorDataFromSpec(spec) {
     });
   }
 
-  if (spec.spell) {
+  // Real spellcasting entries (attached after creation) carry DC, attack and
+  // the spells themselves; the prose note only exists for a creature whose
+  // abilities reference a DC without any parseable spell list.
+  if (spec.spell && !spec.spellcasting?.entries?.length) {
     items.push({
       name: 'Spellcasting',
       type: 'action',
@@ -92,7 +96,7 @@ export function actorDataFromSpec(spec) {
         category: 'offensive',
         description: {
           value: `<p>Spell DC ${spec.spell.dc}, spell attack ${signed(spec.spell.attack)}. `
-            + 'Add spells to taste; slots and lists do not convert mechanically.</p>',
+            + 'Add spells to taste; no spell list was found to convert.</p>',
         },
       },
     });
@@ -157,12 +161,36 @@ export function actorDataFromSpec(spec) {
 
 const signed = (n) => (n >= 0 ? `+${n}` : `${n}`);
 
-/** Create the actor in the world and return it. */
+/** Create the actor, then realise its spellcasting from the compendium. */
 export async function createCreatureActor(spec) {
   const data = actorDataFromSpec(spec);
   const actor = await Actor.implementation.create(data);
   if (!actor) throw new Error(game.i18n.localize('MCC.Errors.ActorCreateFailed'));
-  console.log(`${MODULE_ID} | created actor ${actor.name} (${actor.id})`);
+
+  const { created, missing } = await attachSpellcasting(actor, spec);
+  if (missing.length) {
+    // The GM gets the unmatched names on the sheet itself, where the creature
+    // is actually used - a toast alone would be gone by game night.
+    await actor.createEmbeddedDocuments('Item', [{
+      name: game.i18n.localize('MCC.Create.UnmatchedSpellsTitle'),
+      type: 'action',
+      img: ACTION_IMG.passive,
+      system: {
+        actionType: { value: 'passive' },
+        actions: { value: null },
+        category: 'offensive',
+        description: {
+          value: `<p>${game.i18n.localize('MCC.Create.UnmatchedSpellsBody')}</p>`
+            + `<p><strong>${missing.map(escapeHTML).join(', ')}</strong></p>`,
+        },
+      },
+    }]);
+    ui.notifications.warn(
+      game.i18n.format('MCC.Create.SpellsMissing', { count: missing.length, list: missing.join(', ') }),
+    );
+  }
+
+  console.log(`${MODULE_ID} | created actor ${actor.name} (${actor.id}), ${created} spells attached`);
   return actor;
 }
 

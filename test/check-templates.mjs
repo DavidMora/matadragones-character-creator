@@ -59,7 +59,8 @@ const specContext = {
   speed: '25 feet',
   strikes: [{ line: 'Jaws +14, 2d8+5 piercing' }],
   skills: 'Athletics +12',
-  spell: 'DC 21',
+  spell: null,
+  spellEntries: [{ line: 'Innate Spellcasting (divine) DC 21, attack +13: translocate (at will)' }],
   languages: 'common',
   specials: [{ name: 'Rend', actionType: 'action', description: 'Tears things.' }],
 };
@@ -112,6 +113,7 @@ const importHtml = shell(context);
 const builderHtml = shell({ ...context, isImport: false, isBuilder: true });
 
 check('import tab renders its preview', importHtml.includes('Preview Beast'), true);
+check('spell entries render in the preview', importHtml.includes('translocate (at will)'), true);
 check('import tab shows the missing-field warning', importHtml.includes('MCC.Import.MissingField'), true);
 check('builder tab renders rows', builderHtml.includes('builder.strike.0.name'), true);
 check('builder remove buttons carry their index',

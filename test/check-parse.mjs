@@ -1,6 +1,6 @@
 /** The deterministic stat block parser, against both layouts. */
 import { makeCheck, load } from './harness.mjs';
-import { FROST_REAVER, EMBER_WISP } from './fixtures.mjs';
+import { FROST_REAVER, EMBER_WISP, GLOOM_CALLER } from './fixtures.mjs';
 
 const { parse5eStatBlock, damagePerRound, diceAverage } = await load('parse5e.js');
 const { check, done } = makeCheck();
@@ -67,6 +67,24 @@ check('wisp ranged range', w.attacks[1].range, { increment: 60, max: null });
 check('wisp flat multiattack', w.multiattack.counts, { '*': 2 });
 // Best attack's printed average (7) twice.
 check('wisp DPR is best attack twice', damagePerRound(w), 14);
+
+// --- Spell lists -------------------------------------------------------------
+const caller = parse5eStatBlock(GLOOM_CALLER);
+check('caller parses without gaps', { ok: caller.ok, missing: caller.missing }, { ok: true, missing: [] });
+const c = caller.data;
+check('caller casting ability is the first printed', c.spellcasting.ability, 'cha');
+check('caller spell groups', c.spellcasting.groups.map((g) => [g.kind, g.uses ?? g.slots ?? null, g.spells]), [
+  ['at-will', null, ['mage hand', 'misty step']],
+  ['per-day', 3, ['dimension door', 'hold person']],
+  ['per-day', 1, ['phantasmal killer']],
+  ['cantrips', null, ['acid splash', 'mage hand']],
+  ['slots', 4, ['magic missile', 'mage armor']],
+  ['slots', 3, ['scorching ray']],
+  ['slots', 2, ['fireball']],
+]);
+check('caller slot ranks', c.spellcasting.groups.filter((g) => g.kind === 'slots').map((g) => g.rank5e), [1, 2, 3]);
+check('spell attack action still extracted', c.attacks.map((a) => a.name), ['Shadow Claw']);
+check('no spellcasting on the spell-less reaver', r.spellcasting, null);
 
 // --- Odds and ends -----------------------------------------------------------
 check('diceAverage handles flat and dice', [diceAverage('2d8+6'), diceAverage('7')], [15, 7]);

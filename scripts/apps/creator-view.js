@@ -243,7 +243,14 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
           + (strike.traits.length ? ` (${strike.traits.join(', ')})` : ''),
       })),
       skills: spec.skills.map((skill) => `${skill.name} ${signed(skill.mod)}`).join(', '),
-      spell: spec.spell ? game.i18n.format('MCC.Preview.SpellLine', { dc: spec.spell.dc, attack: signed(spec.spell.attack) }) : null,
+      spell: spec.spell && !spec.spellcasting?.entries?.length
+        ? game.i18n.format('MCC.Preview.SpellLine', { dc: spec.spell.dc, attack: signed(spec.spell.attack) })
+        : null,
+      spellEntries: (spec.spellcasting?.entries ?? []).map((entry) => ({
+        line: `${entry.name} (${entry.tradition}) DC ${entry.dc}, attack ${signed(entry.attack)}: `
+          + entry.spells.map((s) => s.name
+            + (s.constant ? ' (constant)' : s.atWill ? ' (at will)' : s.uses ? ` (${s.uses}/day)` : '')).join(', '),
+      })),
       languages: spec.languages.join(', '),
       specials: spec.specials.map((s) => ({
         name: s.name,

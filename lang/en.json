@@ -105,6 +105,9 @@
       "ArtHint": "Uses your OpenAI key to paint a portrait from the creature's description and set it as both the actor image and the prototype token.",
       "PaintingBusy": "Painting the portrait…",
       "Success": "Created {name} (level {level}).",
+      "SpellsMissing": "{count} spell(s) had no match in the compendium and were listed on the sheet instead: {list}",
+      "UnmatchedSpellsTitle": "Unconverted Spells",
+      "UnmatchedSpellsBody": "These printed spells have no direct match in the spells compendium. Pick replacements by hand or drop them:",
       "ArtSuccess": "Artwork applied to {name}.",
       "ArtFailed": "The actor was created, but artwork generation failed: {message}"
     },

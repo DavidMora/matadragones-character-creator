@@ -53,6 +53,31 @@ Multiattack. The wisp attacks twice.
 Singe. Melee Attack Roll: +5, reach 5 ft. Hit: 7 (1d8 + 3) fire damage.
 Cinder Bolt. Ranged Attack Roll: +5, range 60 ft. Hit: 6 (1d6 + 3) fire damage, and the target must succeed on a DC 12 Dexterity saving throw or catch fire.`;
 
+/** 2014-style caster with both an innate list and leveled slots. */
+export const GLOOM_CALLER = `Gloom Caller
+Medium fiend, neutral evil
+Armor Class 15 (natural armor)
+Hit Points 91 (14d8 + 28)
+Speed 30 ft.
+STR 12 (+1) DEX 14 (+2) CON 15 (+2) INT 17 (+3) WIS 12 (+1) CHA 18 (+4)
+Saving Throws Int +6, Cha +7
+Skills Arcana +6, Deception +7
+Damage Resistances cold, necrotic
+Senses darkvision 120 ft., passive Perception 11
+Languages Abyssal, Common
+Challenge 7 (2,900 XP)
+Innate Spellcasting. The caller's innate spellcasting ability is Charisma (spell save DC 15). It can innately cast the following spells, requiring no material components:
+At will: mage hand, misty step
+3/day each: dimension door, hold person
+1/day each: phantasmal killer
+Spellcasting. The caller is a 9th-level spellcaster. Its spellcasting ability is Intelligence (spell save DC 14, +6 to hit with spell attacks). It has the following wizard spells prepared:
+Cantrips (at will): acid splash, mage hand
+1st level (4 slots): magic missile, mage armor
+2nd level (3 slots): scorching ray
+3rd level (2 slots): fireball
+Actions
+Shadow Claw. Melee Spell Attack: +7 to hit, reach 5 ft., one target. Hit: 14 (3d6 + 4) necrotic damage, and the target is grappled (escape DC 15).`;
+
 /** A creature spec of the shape convert.js produces, for actor tests. */
 export const SAMPLE_SPEC = {
   name: 'Test Horror',

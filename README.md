@@ -43,12 +43,21 @@ A macro-facing API is exposed at
 `parse5eStatBlock(text)`, `convertCreature(parsed, {level, tiers})`,
 `specFromBuilder(draft)`, `createCreatureActor(spec)`.
 
+## Spellcasting
+
+Spell lists convert into real spellcasting entries on the Spells tab: innate
+lists become an innate entry (per-day uses on each spell, at-will and constant
+spells marked the way official bestiary data marks them), leveled casters
+become a spontaneous entry with their slot counts, and every spell name is
+mapped to its remaster name and resolved against the pf2e spells compendium.
+A name with no compendium match is never guessed: it is listed in an
+"Unconverted Spells" note on the sheet for the GM to replace.
+
 ## What does not convert
 
-Spell lists, slots and limited-use economies do not map mechanically; the
-module records spell DC/attack in a Spellcasting note and flags abilities for
-review in the actor's notes. Legendary/lair actions come across as free
-actions to re-cost by hand.
+Limited-use ability economies (recharge, legendary action budgets) do not map
+mechanically; legendary/lair actions come across as free actions to re-cost by
+hand.
 
 ## Development
 

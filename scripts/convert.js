@@ -166,12 +166,13 @@ export function classify(data) {
   tiers.damage = dpr === 0 ? 'moderate'
     : frac >= 1.1 ? 'extreme' : frac >= 0.6 ? 'high' : frac >= 0.15 ? 'moderate' : 'low';
 
-  // Spellcasting: a full casting feature reads as a caster (high DC); a mere
-  // innate list or a printed save DC reads as moderate.
+  // Spellcasting: a slot caster reads as a real caster (high DC); an innate
+  // list or a mere printed save DC reads as moderate.
   const specialText = (data.specials ?? []).map((s) => `${s.name} ${s.description}`).join(' ');
-  const hasCasting = /spellcasting/i.test(specialText);
   const hasDC = /\bDC\s*\d+/i.test(specialText);
-  tiers.spell = hasCasting ? 'high' : hasDC ? 'moderate' : null;
+  tiers.spell = data.spellcasting
+    ? data.spellcasting.groups.some((g) => g.kind === 'slots') ? 'high' : 'moderate'
+    : /spellcasting/i.test(specialText) ? 'moderate' : hasDC ? 'moderate' : null;
 
   return tiers;
 }
@@ -286,6 +287,7 @@ export function convertCreature(data, { level: levelOverride, tiers: tierOverrid
           attack: spellAttackFor(level, tiers.spell),
         }
       : null,
+    spellcasting: buildSpellcasting(data, level, tiers),
     specials: buildSpecials(data, textContext),
     immunities: mapTypedList(data.immunities).concat(
       (data.conditionImmunities ?? [])
@@ -297,6 +299,82 @@ export function convertCreature(data, { level: levelOverride, tiers: tierOverrid
     tiers,
   };
   return spec;
+}
+
+/**
+ * The tradition an innate list belongs to is a judgement call in either game;
+ * this one is deterministic and stated: creature type first (a fiend casts
+ * divine, a fey casts primal), then the printed casting ability, then arcane.
+ * It is a starting point the GM changes on the sheet, not a claim.
+ */
+const TYPE_TRADITION = {
+  animal: 'primal', beast: 'primal', elemental: 'primal', fey: 'primal', plant: 'primal',
+  celestial: 'divine', fiend: 'divine', monitor: 'divine',
+  aberration: 'occult', undead: 'occult',
+};
+const ABILITY_TRADITION = { int: 'arcane', wis: 'divine', cha: 'occult' };
+
+/**
+ * Turn the parsed spell lists into spellcasting entries the actor builder can
+ * realise: an innate entry for at-will/per-day/constant lists, a spontaneous
+ * entry with slots for leveled casters, cantrips filed with whichever exists.
+ * Names are remastered here; matching them to actual spell documents happens
+ * against the compendium at creation time.
+ */
+function buildSpellcasting(data, level, tiers) {
+  const parsed = data.spellcasting;
+  if (!parsed || !tiers.spell || parsed.groups.length === 0) return null;
+
+  const dc = spellDCFor(level, tiers.spell);
+  const attack = spellAttackFor(level, tiers.spell);
+  const tradition = TYPE_TRADITION[CREATURE_TYPE_MAP[data.type ?? ''] ?? '']
+    ?? ABILITY_TRADITION[parsed.ability] ?? 'arcane';
+
+  const hasSlots = parsed.groups.some((g) => g.kind === 'slots');
+  const forCaster = (g) => g.kind === 'slots' || (g.kind === 'cantrips' && hasSlots);
+  // At-will before per-day, so a spell printed under both keeps the better use.
+  const ORDER = { 'at-will': 0, constant: 1, cantrips: 2, 'per-day': 3, slots: 4 };
+  const sorted = [...parsed.groups].sort((a, b) => ORDER[a.kind] - ORDER[b.kind]);
+
+  const collect = (groups) => {
+    const seen = new Set();
+    const spells = [];
+    for (const group of groups) {
+      for (const printed of group.spells) {
+        const name = modernizeSpellNames(printed.toLowerCase());
+        if (seen.has(name)) continue;
+        seen.add(name);
+        spells.push({
+          name,
+          uses: group.kind === 'per-day' ? group.uses : null,
+          atWill: group.kind === 'at-will',
+          constant: group.kind === 'constant',
+        });
+      }
+    }
+    return spells;
+  };
+
+  const entries = [];
+  const innate = collect(sorted.filter((g) => !forCaster(g)));
+  if (innate.length) {
+    entries.push({
+      name: 'Innate Spellcasting', category: 'innate', tradition,
+      ability: parsed.ability, dc, attack, slots: {}, spells: innate,
+    });
+  }
+  const casterSpells = collect(sorted.filter(forCaster));
+  if (casterSpells.length) {
+    const slots = {};
+    for (const group of parsed.groups) {
+      if (group.kind === 'slots') slots[Math.min(group.rank5e, 9)] = group.slots;
+    }
+    entries.push({
+      name: 'Spellcasting', category: 'spontaneous', tradition,
+      ability: parsed.ability, dc, attack, slots, spells: casterSpells,
+    });
+  }
+  return entries.length ? { entries } : null;
 }
 
 function midpointHP(level, tier) {
@@ -346,6 +424,12 @@ function buildStrikes(data, level, tiers) {
       .filter((d) => d.type && /d/.test(d.dice));
     const traits = [];
     if (attack.kind === 'melee' && attack.reach && attack.reach > 5) traits.push(`reach-${Math.min(attack.reach, 30)}`);
+    // Rider effects written as prose in the source become pf2e attack effects,
+    // which is how the sheet advertises Grab and friends beside the strike.
+    const attackEffects = [];
+    if (/\bgrappled\b/i.test(attack.text)) attackEffects.push('grab');
+    if (/knocked prone/i.test(attack.text)) attackEffects.push('knockdown');
+    if (/\bpushed\s+\d+\s*(?:feet|ft)/i.test(attack.text)) attackEffects.push('push');
     return {
       name: attack.name,
       kind: attack.kind,
@@ -355,6 +439,7 @@ function buildStrikes(data, level, tiers) {
       damageType,
       extra,
       traits,
+      attackEffects,
       rangeIncrement: attack.kind === 'ranged' ? clampRange(attack.range?.increment) : null,
       rangeMax: attack.kind === 'ranged' ? clampRange(attack.range?.max) : null,
     };
@@ -410,6 +495,9 @@ function buildSpecials(data, textContext) {
   const out = [];
   for (const special of data.specials ?? []) {
     if (/^multiattack$/i.test(special.name)) continue;
+    // A parsed spell list becomes a real spellcasting entry; keeping the
+    // prose trait too would state the spells twice with two different DCs.
+    if (data.spellcasting && /spellcasting/i.test(special.name)) continue;
     const isAttack = (data.attacks ?? []).some((a) => a.name === special.name);
     if (isAttack) continue;
     const kind = SECTION_TO_ACTION[special.section] ?? SECTION_TO_ACTION.trait;
@@ -431,7 +519,7 @@ function buildProvenance(data, tiers, level) {
     `Tiers: AC ${tiers.ac}, HP ${tiers.hp}, Fort ${tiers.fortitude}, Ref ${tiers.reflex}, Will ${tiers.will}, `
       + `Perception ${tiers.perception}, attack ${tiers.attack}, damage ${tiers.damage}`
       + (tiers.spell ? `, spell DC ${tiers.spell}.` : '.'),
-    'All values come from the Building Creatures tables; ability prose was carried over with DCs and saves rewritten. Review limited-use abilities and spell lists by hand.',
+    'All values come from the Building Creatures tables; ability prose was carried over with DCs, saves and spell names rewritten to remaster. Spell lists become real spellcasting entries matched against the compendium; anything unmatched is listed on the sheet. Review limited-use abilities by hand.',
   ];
   return parts.join(' ');
 }
@@ -496,6 +584,7 @@ export function specFromBuilder(draft) {
       damageType: strike.damageType,
       extra: [],
       traits: [],
+      attackEffects: [],
       rangeIncrement: strike.kind === 'ranged' ? 30 : null,
       rangeMax: null,
     })),
@@ -508,6 +597,7 @@ export function specFromBuilder(draft) {
     spell: draft.spell
       ? { tier: draft.spell, dc: spellDCFor(level, draft.spell), attack: spellAttackFor(level, draft.spell) }
       : null,
+    spellcasting: null,
     specials: [],
     immunities: [],
     resistances: [],

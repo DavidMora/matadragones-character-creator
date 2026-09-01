@@ -21,6 +21,7 @@
     {{#if weaknesses}}<div><dt>{{localize 'MCC.Preview.Weaknesses'}}</dt><dd>{{weaknesses}}</dd></div>{{/if}}
     <div><dt>{{localize 'MCC.Preview.Speed'}}</dt><dd>{{speed}}</dd></div>
     {{#if spell}}<div><dt>{{localize 'MCC.Preview.Spells'}}</dt><dd>{{spell}}</dd></div>{{/if}}
+    {{#each spellEntries}}<div class="mcc-spell-entry"><dt>{{localize 'MCC.Preview.Spells'}}</dt><dd>{{line}}</dd></div>{{/each}}
   </dl>
   {{#if strikes}}
     <h4>{{localize 'MCC.Preview.Strikes'}}</h4>

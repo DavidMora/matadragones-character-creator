@@ -124,22 +124,53 @@ check('spellcasting trait fully remastered', spellTrait,
   `Spellcasting. Its spellcasting ability is Charisma (spell DC ${dc9}, spell attack +${dc9 - 8}). `
   + 'At will: telekinetic hand, translocate. 3/day: translocate, paralyze.');
 
-// End to end: a spellcasting special on a parsed block reaches the spec with
-// remaster names and a table DC, not the printed ones.
-const casterData = parse5eStatBlock(FROST_REAVER).data;
-casterData.specials.push({
-  name: 'Spellcasting',
-  section: 'trait',
-  description: 'Spell save DC 14. At will: magic missile, true strike.',
-});
-const casterSpec = convert.convertCreature(casterData);
-const castingNote = casterSpec.specials.find((s) => s.name === 'Spellcasting');
-check('spellcasting classified high once a casting feature exists', casterSpec.spell.tier, 'high');
-check('spell list remastered in the spec',
-  castingNote.description.includes('force barrage') && castingNote.description.includes('sure strike'), true);
-check('printed spell DC replaced by the table DC',
-  castingNote.description.includes(`DC ${tables.spellDCFor(9, 'high')}`)
-  && !castingNote.description.includes('DC 14'), true);
+// --- Spellcasting entries ----------------------------------------------------
+const { GLOOM_CALLER } = await import('./fixtures.mjs');
+const callerSpec = convert.convertCreature(parse5eStatBlock(GLOOM_CALLER).data);
+
+check('slot caster classified high', callerSpec.spell.tier, 'high');
+check('two entries: innate and spontaneous',
+  callerSpec.spellcasting.entries.map((e) => [e.name, e.category]),
+  [['Innate Spellcasting', 'innate'], ['Spellcasting', 'spontaneous']]);
+check('fiend casts divine regardless of ability',
+  callerSpec.spellcasting.entries.map((e) => e.tradition), ['divine', 'divine']);
+check('entry DC and attack from the tables', [
+  callerSpec.spellcasting.entries[0].dc, callerSpec.spellcasting.entries[0].attack,
+], [tables.spellDCFor(7, 'high'), tables.spellAttackFor(7, 'high')]);
+
+const innateSpells = callerSpec.spellcasting.entries[0].spells;
+check('innate spells remastered with frequencies',
+  innateSpells.map((s) => [s.name, s.uses, s.atWill]), [
+    ['telekinetic hand', null, true],
+    ['translocate', null, true],
+    ['paralyze', 3, false],
+    ['vision of death', 1, false],
+  ]);
+// "dimension door" (3/day) and "misty step" (at will) both remaster to
+// translocate; at-will is collected first, so the better frequency wins.
+check('duplicate remaster names deduped in at-will\'s favour',
+  innateSpells.filter((s) => s.name === 'translocate').length, 1);
+
+const casterEntry = callerSpec.spellcasting.entries[1];
+check('cantrips filed with the slot caster, deduped against nothing',
+  casterEntry.spells.map((s) => s.name),
+  ['caustic blast', 'telekinetic hand', 'force barrage', 'mystic armor', 'blazing bolt', 'fireball']);
+check('slots copied per rank', casterEntry.slots, { 1: 4, 2: 3, 3: 2 });
+
+check('spellcasting traits do not duplicate as prose specials',
+  callerSpec.specials.some((s) => /spellcasting/i.test(s.name)), false);
+check('grappled prose becomes a Grab attack effect',
+  callerSpec.strikes[0].attackEffects, ['grab']);
+
+// Innate-only casting classifies moderate; a mere ability DC still anchors
+// the prose without inventing entries.
+const innateOnly = parse5eStatBlock(GLOOM_CALLER).data;
+innateOnly.specials = innateOnly.specials.filter((s) => s.name !== 'Spellcasting');
+const { reparseSpecials } = await load('parse5e.js');
+reparseSpecials(innateOnly);
+const innateSpec = convert.convertCreature(innateOnly);
+check('innate-only classified moderate', innateSpec.spell.tier, 'moderate');
+check('innate-only still builds its entry', innateSpec.spellcasting.entries.map((e) => e.category), ['innate']);
 
 // --- Builder path ------------------------------------------------------------
 const draft = {

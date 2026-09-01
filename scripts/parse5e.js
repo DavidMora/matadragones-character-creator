@@ -98,6 +98,7 @@ export function parse5eStatBlock(rawText) {
     specials: [],
     attacks: [],
     multiattack: null,
+    spellcasting: null,
   };
 
   // --- Size and type line -------------------------------------------------
@@ -246,6 +247,7 @@ export function parse5eStatBlock(rawText) {
   // --- Special abilities and actions --------------------------------------
   collectSpecials(lines, fieldPattern, data);
   extractAttacks(data);
+  data.spellcasting = extractSpellcasting(data);
 
   const ok = missing.length === 0;
   return { ok, missing, data };
@@ -300,7 +302,58 @@ export function reparseSpecials(data) {
   data.attacks = [];
   data.multiattack = null;
   extractAttacks(data);
+  data.spellcasting = extractSpellcasting(data);
   return data;
+}
+
+/**
+ * Group headings a spell list uses, 2014 and 2024 alike:
+ * "At will:", "Constant:", "3/day each:", "Cantrips (at will):",
+ * "1st level (4 slots):" / "1st Level (4 Slots):".
+ */
+const SPELL_GROUP_HEAD = /(cantrips\s*\(at will\)|at will|constant|(\d+)\s*\/\s*day(?:\s+each)?|(\d+)(?:st|nd|rd|th)[- ]?(?:level|rank)\s*\((\d+)\s*(?:\d+(?:st|nd|rd|th)-level\s+)?slots?\))\s*:/gi;
+
+/**
+ * Pull structured spell lists out of every Spellcasting special.
+ *
+ * Returns null when no special mentions spellcasting; otherwise
+ * `{ ability, groups }` where each group is
+ * `{ kind: 'at-will'|'constant'|'per-day'|'cantrips'|'slots', uses, rank5e,
+ *    slots, spells: [names as printed] }`.
+ */
+export function extractSpellcasting(data) {
+  const casters = (data.specials ?? []).filter((s) => /spellcasting/i.test(s.name));
+  if (casters.length === 0) return null;
+
+  let ability = null;
+  const groups = [];
+  for (const caster of casters) {
+    const text = caster.description;
+    const abilityMatch = text.match(/spellcasting ability is (\w+)/i);
+    if (abilityMatch && !ability) ability = abilityMatch[1].slice(0, 3).toLowerCase();
+
+    const heads = [...text.matchAll(SPELL_GROUP_HEAD)];
+    heads.forEach((head, i) => {
+      const start = head.index + head[0].length;
+      const end = i + 1 < heads.length ? heads[i + 1].index : text.length;
+      // A list runs to the next heading or the end of its sentence.
+      const segment = text.slice(start, end).split(/\.(?:\s|$)/)[0];
+      const spells = segment
+        .split(',')
+        .map((name) => name.replace(/\([^)]*\)/g, '').replace(/[*.]/g, '').trim())
+        .filter((name) => name && name.length <= 40 && !/^\d/.test(name));
+      if (spells.length === 0) return;
+
+      const label = head[1].toLowerCase();
+      if (label.startsWith('cantrips')) groups.push({ kind: 'cantrips', spells });
+      else if (label === 'at will') groups.push({ kind: 'at-will', spells });
+      else if (label === 'constant') groups.push({ kind: 'constant', spells });
+      else if (head[2]) groups.push({ kind: 'per-day', uses: Number(head[2]), spells });
+      else groups.push({ kind: 'slots', rank5e: Number(head[3]), slots: Number(head[4]), spells });
+    });
+  }
+  if (groups.length === 0 && !ability) return null;
+  return { ability: ability ?? 'cha', groups };
 }
 
 /** Pull attack rolls out of action prose so the converter can re-stat them. */
