@@ -86,6 +86,15 @@ const context = {
   isImport: true,
   isBuilder: false,
   importText: 'pasted text',
+  sources: [
+    { value: 'dnd5e', label: "World's oldest roleplaying game, 5th edition", selected: true },
+    { value: 'pf1e', label: 'Pathfinder First Edition', selected: false },
+    { value: 'pf2e', label: 'Pathfinder Second Edition', selected: false },
+  ],
+  sourceHint: 'Converted from another system.',
+  sourcePlaceholder: 'Paste here…',
+  aiParseAvailable: true,
+  directImport: false,
   parseMissing: ['Hit Points'],
   parsedVia: 'text',
   parsed: { name: 'X', crText: '3', type: 'lg beast', specialCount: 2, attackCount: 1 },
@@ -212,5 +221,27 @@ const keyless = shell({ ...context, hasApiKey: false });
 check('keyless still offers deterministic parse',
   /<button type="button" data-action="parse"\s*>/.test(keyless), true);
 check('keyless disables the AI parse', /data-action="aiParse" disabled/.test(keyless), true);
+
+// --- Source dropdown ---------------------------------------------------------
+check('the importer offers all three systems',
+  [...importHtml.matchAll(/<option value="(dnd5e|pf1e|pf2e)"/g)].map((m) => m[1]),
+  ['dnd5e', 'pf1e', 'pf2e']);
+check('the source select is bound', importHtml.includes('data-bind="import.source"'), true);
+
+// A Pathfinder Second Edition block is transcribed, so the tier controls and
+// the AI paths that re-derive numbers must not be offered for it.
+const directHtml = shell({ ...context, directImport: true, aiParseAvailable: false });
+check('a direct import hides the tier controls',
+  directHtml.includes('data-bind="import.tier.ac"'), false);
+check('a direct import explains why there is nothing to tune',
+  directHtml.includes('MCC.Source.DirectNote'), true);
+check('a direct import offers no AI transcription',
+  directHtml.includes('data-action="aiParse"'), false);
+check('a direct import offers no ability rewrite',
+  directHtml.includes('data-action="rewrite"'), false);
+check('a converted import keeps all three',
+  [importHtml.includes('data-bind="import.tier.ac"'),
+    importHtml.includes('data-action="aiParse"'),
+    importHtml.includes('data-action="rewrite"')], [true, true, true]);
 
 done('templates render and their seams line up');

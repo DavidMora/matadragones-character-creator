@@ -52,7 +52,7 @@
     },
     "Import": {
       "PasteHeading": "Stat block",
-      "PasteTooltip": "Paste a monster stat block from the world's oldest roleplaying game (5th edition), 2014 or 2024 layout. Parsing is deterministic and happens entirely on your machine; the AI button is a fallback for pastes the parser cannot read.",
+      "PasteTooltip": "Pick the system your stat block comes from, then paste it. Parsing is deterministic and happens entirely on your machine. A block from another system is converted through the Building Creatures tables; a Pathfinder Second Edition block is transcribed as printed.",
       "PastePlaceholder": "Paste the full stat block here, from the name line down to the last action…",
       "Parse": "Parse stat block",
       "AiParse": "Parse with AI",
@@ -281,6 +281,19 @@
       "Once": "1/day",
       "Twice": "2/day",
       "Thrice": "3/day"
+    },
+    "Source": {
+      "Label": "Stat block system",
+      "Dnd5e": "World's oldest roleplaying game, 5th edition",
+      "Dnd5eHint": "Converted: printed values are ranked against what that system expects at that CR, then read from the Building Creatures tables.",
+      "Dnd5ePlaceholder": "Paste the full stat block, from the name line down to the last action…",
+      "Pf1e": "Pathfinder First Edition",
+      "Pf1eHint": "Converted the same way. PF1e prints its saves, so Fortitude, Reflex and Will are ranked from the real numbers.",
+      "Pf1ePlaceholder": "Paste the block including DEFENSE, OFFENSE and STATISTICS…",
+      "Pf2e": "Pathfinder Second Edition",
+      "Pf2eHint": "Transcribed, not converted: these are already this system’s numbers, so they are copied exactly rather than re-derived from tiers.",
+      "Pf2ePlaceholder": "Paste the block, from the name and Creature level down to the last Strike…",
+      "DirectNote": "This block is already Pathfinder Second Edition, so every value is copied as printed. There are no tiers to tune — re-deriving them would round an exact creature to the nearest tier."
     }
   }
 }

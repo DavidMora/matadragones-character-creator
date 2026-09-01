@@ -155,3 +155,51 @@ export const SAMPLE_SPEC = {
   weaknesses: [{ type: 'fire', value: 8 }],
   tiers: {},
 };
+
+/** PF1e layout: labelled sections, ability scores, printed saves. */
+export const CINDER_DRAKE = `Cinder Drake CR 6
+XP 2,400
+N Medium dragon (fire)
+Init +6; Senses darkvision 60 ft., low-light vision, scent; Perception +12
+
+DEFENSE
+AC 20, touch 13, flat-footed 17 (+7 natural, +3 Dex)
+hp 66 (7d12+21)
+Fort +8, Ref +8, Will +6
+DR 5/magic; Immune fire, paralysis, sleep; Resist acid 10; SR 17
+Weaknesses vulnerability to cold
+
+OFFENSE
+Speed 40 ft., fly 80 ft.
+Melee bite +11 (1d8+5), 2 claws +11 (1d6+5)
+Ranged breath +9 (4d6)
+Space 5 ft.; Reach 10 ft.
+Special Attacks breath weapon
+
+STATISTICS
+Str 20, Dex 17, Con 17, Int 8, Wis 14, Cha 11
+Base Atk +7; CMB +12; CMD 25
+Feats Flyby Attack, Improved Initiative, Power Attack
+Skills Fly +11, Perception +12, Stealth +9
+Languages Draconic
+Gear scale mail, longsword
+
+SPECIAL ABILITIES
+Breath Weapon (Su) The drake exhales a 30-foot cone of flame every 1d4 rounds. Creatures in the area take 6d6 fire damage, Reflex DC 18 half.
+Smoke Sight (Ex) The drake sees through smoke and fog without penalty.`;
+
+/** PF2e layout: the numbers are already correct and must survive untouched. */
+export const SILT_LURKER = `Silt Lurker Creature 6
+Uncommon Large Aberration Amphibious
+Perception +16; darkvision, tremorsense (imprecise) 30 feet
+Languages Aklo
+Skills Athletics +16, Stealth +14
+Str +5, Dex +3, Con +4, Int -2, Wis +2, Cha -1
+Items trident
+AC 23; Fort +16, Ref +12, Will +11
+HP 105; Immunities poison; Resistances acid 5; Weaknesses cold 5
+Silt Cloud [reaction] Trigger The lurker takes damage. Effect The lurker clouds the water around it.
+Speed 20 feet, swim 40 feet
+Melee [one-action] jaws +18 (reach 10 feet), Damage 2d8+9 piercing plus 1d6 acid
+Ranged [one-action] spine +14 (range increment 30 feet), Damage 2d6+4 piercing
+Engulfing Silt The lurker drags a grabbed creature into the silt.`;

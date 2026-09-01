@@ -22,7 +22,8 @@ const EQUIPMENT_PACK = 'pf2e.equipment-srd';
 const NATURAL_ATTACKS = new RegExp(
   '^(bite|claw|claws|slam|tail|tentacle|tentacles|sting|gore|hoof|hooves|talon|talons|'
   + 'fist|pincer|pseudopod|horn|beak|wing|tongue|spine|spines|quill|quills|stomp|'
-  + 'trample|constrict|rend|touch|ram|maw|jaws|fangs|proboscis|barb|hook)\\b',
+  + 'trample|constrict|rend|touch|ram|maw|jaws|fangs|proboscis|barb|hook|breath|spit|'
+  + 'spray|gaze|web|ray|blast)\\b',
   'i',
 );
 
@@ -90,7 +91,16 @@ export function gearFromParsed(data) {
     if (name && !found.includes(name)) found.push(name);
   };
 
-  for (const part of (data.acNote ?? '').split(/,|\band\b/)) add(part);
+  /*
+   * The AC parenthetical means different things in different systems: 5e
+   * writes what the creature is wearing ("chain mail, shield"), PF1e writes
+   * the arithmetic ("+7 natural, +3 Dex"). A bonus figure is the tell, and
+   * reading one as gear armed creatures with a "Dex".
+   */
+  const acNote = data.acNote ?? '';
+  if (!/[+-]\d/.test(acNote)) {
+    for (const part of acNote.split(/,|\band\b/)) add(part);
+  }
   for (const part of (data.gearLine ?? '').split(/,|\band\b/)) add(part);
   for (const attack of data.attacks ?? []) {
     if (NATURAL_ATTACKS.test(attack.name)) continue;

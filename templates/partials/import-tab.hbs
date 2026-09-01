@@ -5,17 +5,28 @@
       <h3>{{localize 'MCC.Import.PasteHeading'}}
         <i class="fa-solid fa-circle-info" data-tooltip="{{localize 'MCC.Import.PasteTooltip'}}"></i>
       </h3>
-      <textarea data-bind="import.text" rows="14" class="mcc-statblock-input"
-                placeholder="{{localize 'MCC.Import.PastePlaceholder'}}"
+      <label class="mcc-field">
+        <span>{{localize 'MCC.Source.Label'}}</span>
+        <select data-bind="import.source" {{#if busy}}disabled{{/if}}>
+          {{#each sources}}
+            <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+          {{/each}}
+        </select>
+        <small>{{sourceHint}}</small>
+      </label>
+      <textarea data-bind="import.text" rows="12" class="mcc-statblock-input"
+                placeholder="{{sourcePlaceholder}}"
                 {{#if busy}}disabled{{/if}}>{{importText}}</textarea>
       <div class="mcc-row mcc-parse-row">
         <button type="button" data-action="parse" {{#if busy}}disabled{{/if}}>
           <i class="fa-solid fa-gears"></i> {{localize 'MCC.Import.Parse'}}
         </button>
-        <button type="button" data-action="aiParse" {{#unless hasApiKey}}disabled{{/unless}} {{#if busy}}disabled{{/if}}
-                data-tooltip="{{localize 'MCC.Import.AiParseHint'}}">
-          <i class="fa-solid fa-wand-magic-sparkles"></i> {{localize 'MCC.Import.AiParse'}}
-        </button>
+        {{#if aiParseAvailable}}
+          <button type="button" data-action="aiParse" {{#unless hasApiKey}}disabled{{/unless}} {{#if busy}}disabled{{/if}}
+                  data-tooltip="{{localize 'MCC.Import.AiParseHint'}}">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> {{localize 'MCC.Import.AiParse'}}
+          </button>
+        {{/if}}
         {{#if busyParse}}
           <span class="mcc-busy"><i class="fa-solid fa-spinner fa-spin"></i> {{localize 'MCC.Generate.Working'}}</span>
           <button type="button" data-action="cancel">{{localize 'MCC.Generate.Cancel'}}</button>
@@ -34,6 +45,10 @@
             {{localize 'MCC.Import.MissingField' field=this}}</p>
         {{/each}}
 
+        {{#if directImport}}
+          <p class="mcc-note"><i class="fa-solid fa-circle-check"></i>
+            {{localize 'MCC.Source.DirectNote'}}</p>
+        {{else}}
         <h3>{{localize 'MCC.Import.TuneHeading'}}
           <i class="fa-solid fa-circle-info" data-tooltip="{{localize 'MCC.Import.TuneTooltip'}}"></i>
         </h3>
@@ -58,6 +73,7 @@
             </label>
           {{/each}}
         </div>
+        {{/if}}
       {{/if}}
     </div>
 
@@ -65,11 +81,13 @@
       {{#if parsed}}
         {{> mccSpecPreview importSpec}}
         <div class="mcc-row">
+          {{#unless directImport}}
           <button type="button" data-action="rewrite"
                   {{#unless hasApiKey}}disabled{{/unless}} {{#if busy}}disabled{{/if}}
                   data-tooltip="{{localize 'MCC.Import.RewriteHint'}}">
             <i class="fa-solid fa-feather"></i> {{localize 'MCC.Import.Rewrite'}}
           </button>
+          {{/unless}}
           {{#if busyRewrite}}
             <span class="mcc-busy"><i class="fa-solid fa-spinner fa-spin"></i> {{localize 'MCC.Generate.Working'}}</span>
             <button type="button" data-action="cancel">{{localize 'MCC.Generate.Cancel'}}</button>

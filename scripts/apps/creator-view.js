@@ -7,8 +7,7 @@ import {
   SIZES,
 } from '../constants.js';
 import { LEVELS, ROAD_MAPS, TIERS } from '../tables.js';
-import { parse5eStatBlock } from '../parse5e.js';
-import { levelFromCR } from '../baseline5e.js';
+import { SOURCES, DEFAULT_SOURCE, isDirect, parseWith, sourceById } from '../sources.js';
 import {
   classify,
   convertCreature,
@@ -57,6 +56,8 @@ const frequencyToUses = (value) => ({
 export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
   #tab = 'builder';
   #importText = '';
+  #importSource = DEFAULT_SOURCE;
+  #importDirectSpec = null;
   #parsed = null;
   #parseMissing = [];
   #parsedVia = null; // 'text' | 'ai'
@@ -155,7 +156,29 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
     context.importText = this.#importText;
     context.parseMissing = this.#parseMissing;
     context.parsedVia = this.#parsedVia;
-    if (this.#parsed) {
+    context.sources = Object.values(SOURCES).map((source) => ({
+      value: source.id,
+      label: game.i18n.localize(source.label),
+      selected: source.id === this.#importSource,
+    }));
+    const active = sourceById(this.#importSource);
+    context.sourceHint = game.i18n.localize(active.hint);
+    context.sourcePlaceholder = game.i18n.localize(active.placeholder);
+    // The AI transcription schema describes a 5e stat block, so it is only
+    // offered where it can help.
+    context.aiParseAvailable = this.#importSource === 'dnd5e';
+    context.directImport = isDirect(this.#importSource);
+
+    if (this.#importDirectSpec) {
+      context.parsed = {
+        name: this.#importDirectSpec.name,
+        crText: String(this.#importDirectSpec.level),
+        type: [this.#importDirectSpec.size, ...this.#importDirectSpec.traits].filter(Boolean).join(' '),
+        specialCount: this.#importDirectSpec.specials.length,
+        attackCount: this.#importDirectSpec.strikes.length,
+      };
+      context.importSpec = this.#specContext(this.#importDirectSpec);
+    } else if (this.#parsed) {
       const spec = this.#importSpec();
       const defaults = classify(this.#parsed);
       context.parsed = {
@@ -279,8 +302,9 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** The import spec under the GM's current level and tier overrides. */
   #importSpec() {
+    if (this.#importDirectSpec) return this.#importDirectSpec;
     return convertCreature(this.#parsed, {
-      level: this.#importLevel ?? levelFromCR(this.#parsed.cr),
+      level: this.#importLevel ?? sourceById(this.#importSource).levelFor(this.#parsed),
       tiers: this.#importTiers,
     });
   }
@@ -454,6 +478,13 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
         this.#importText = value;
         return; // No re-render for typing; parse reads it on demand.
       }
+      if (path[0] === 'source') {
+        this.#importSource = value;
+        // A parse belongs to the source it came from; keep the pasted text.
+        this.#parsed = null;
+        this.#importDirectSpec = null;
+        this.#parseMissing = [];
+      }
       if (path[0] === 'level') this.#importLevel = Number(value);
       if (path[0] === 'tier') {
         // Selecting the classified default removes the override, so provenance
@@ -536,16 +567,26 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
 
   static #onParse() {
     this.#readImportText();
-    const { ok, missing, data } = parse5eStatBlock(this.#importText);
-    if (!data || (!ok && !data.name)) {
+    const result = parseWith(this.#importSource, this.#importText);
+    const found = result.spec ?? result.data;
+    if (!found || (!result.ok && !found.name)) {
       ui.notifications.warn(game.i18n.localize('MCC.Import.NothingParsed'));
       return;
     }
-    this.#parsed = data;
-    this.#parseMissing = missing;
+
+    this.#parseMissing = result.missing;
     this.#parsedVia = 'text';
-    this.#importLevel = levelFromCR(data.cr);
     this.#importTiers = {};
+    if (result.mode === 'direct') {
+      // Already this system's numbers: nothing to classify, nothing to tune.
+      this.#importDirectSpec = result.spec;
+      this.#parsed = null;
+      this.#importLevel = result.spec.level;
+    } else {
+      this.#importDirectSpec = null;
+      this.#parsed = result.data;
+      this.#importLevel = sourceById(this.#importSource).levelFor(result.data);
+    }
     this.render();
   }
 
@@ -558,14 +599,17 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
     await this.#withBusy('parse', async (signal) => {
       const data = await aiParseStatBlock(this.#importText, { signal });
       this.#parsed = data;
+      this.#importDirectSpec = null;
       this.#parseMissing = [];
       this.#parsedVia = 'ai';
-      this.#importLevel = levelFromCR(data.cr);
+      this.#importLevel = sourceById('dnd5e').levelFor(data);
       this.#importTiers = {};
     });
   }
 
   static async #onRewrite() {
+    // The rewrite re-anchors DCs through the conversion, which a directly
+    // transcribed creature never goes through.
     if (!this.#parsed) return;
     await this.#withBusy('rewrite', async (signal) => {
       const spec = this.#importSpec();
@@ -595,7 +639,7 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   static async #onCreateImport() {
-    if (!this.#parsed) return;
+    if (!this.#parsed && !this.#importDirectSpec) return;
     await this.#createFromSpec(this.#importSpec());
   }
 

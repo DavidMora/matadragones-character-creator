@@ -10,7 +10,13 @@ apply here too.
 
 ## Non-negotiables
 
-- **No imported number reaches the sheet.** The pipeline is
+- **Converted and direct are different modes, not a detail.** A source whose
+  numbers describe another game is *converted*: classify, then read the value
+  from the tables. A PF2e block is *direct*: its numbers are already correct,
+  so they are transcribed and `convert.js` never sees them. Adding a source
+  means declaring which it is in `sources.js`; routing a PF2e block through
+  the converter would silently round every exact value to the nearest tier.
+- **No imported number reaches the sheet** (converted sources). The pipeline is
   parse → classify (tier per stat, vs CR baselines in `baseline5e.js`) →
   read values from `tables.js` for the mapped level. The AI parse is a
   transcription fallback that feeds the same pipeline; the AI rewrite has its
@@ -81,7 +87,10 @@ apply here too.
 |---|---|
 | Building Creatures tables, tiers, road maps | `scripts/tables.js` |
 | 5e expectations by CR, CR→level | `scripts/baseline5e.js` |
+| Import sources and which mode each uses | `scripts/sources.js` |
 | Stat block text → structure (2014+2024) | `scripts/parse5e.js` |
+| PF1e stat block → the same structure | `scripts/parsepf1.js`, `scripts/baselinepf1.js` |
+| PF2e stat block → a finished spec, transcribed | `scripts/parsepf2.js` |
 | Classification, spec building, DC rewriting | `scripts/convert.js` |
 | Spec → pf2e actor payload | `scripts/actor.js` |
 | Spell entries + compendium resolution | `scripts/spells.js`, `scripts/spellnames.js` |

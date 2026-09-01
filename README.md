@@ -6,12 +6,24 @@ A Foundry VTT module for PF2e that builds creatures two ways:
   pick a level and a concept (brute, sniper, soldier, spellcaster…), and every
   statistic is read from the published tables. Adjust any tier; the number
   follows.
-- **Import a stat block** from the world's oldest roleplaying game (5th
-  edition), 2014 or 2024 layout. The importer is deterministic: it never copies
-  a printed number onto the sheet. Instead it classifies each stat against
-  what a creature of that CR is expected to have (high AC, low HP, extreme
-  attack…), maps the CR to a PF2e level, and reads the actual values from the
-  Building Creatures tables. The same paste always produces the same creature.
+- **Import a stat block** from one of three systems, chosen with a dropdown.
+  Two of them are *converted* and one is *transcribed*, which is a real
+  distinction rather than a detail:
+
+  - The **world's oldest roleplaying game, 5th edition** (2014 or 2024
+    layout) and **Pathfinder First Edition** are converted. Their printed
+    numbers describe a different game, so the importer never copies one onto
+    the sheet: it classifies each stat against what that system expects at
+    that challenge rating (high AC, low HP, extreme attack…), maps the rating
+    to a PF2e level, and reads the actual values from the Building Creatures
+    tables. The same paste always produces the same creature. PF1e prints its
+    saves, so Fortitude, Reflex and Will are ranked from the real numbers
+    rather than inferred from ability scores.
+  - A **Pathfinder Second Edition** block is transcribed. Its numbers already
+    *are* this system's numbers, so AC 23 stays AC 23. Putting them through
+    the tier machinery would round an exact creature to the nearest tier and
+    hand back something close but wrong, so that path is skipped entirely -
+    there are no tiers to tune, and the panel says so.
 
 Both paths end in a real pf2e NPC actor with strikes, skills, abilities,
 senses, immunities/resistances/weaknesses, and provenance notes.
