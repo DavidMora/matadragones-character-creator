@@ -97,7 +97,10 @@
       "SkillsHeading": "Skills",
       "SkillsTooltip": "Skills with their tier; the modifier comes from the skills table for the level.",
       "AddSkill": "Add skill",
-      "RemoveSkill": "Remove this skill"
+      "RemoveSkill": "Remove this skill",
+      "Gear": "Carried gear",
+      "GearPlaceholder": "chain mail, longsword, shield",
+      "GearHint": "Listed on the sheet only; the statistics above already account for gear."
     },
     "Create": {
       "Submit": "Create actor",
@@ -109,7 +112,8 @@
       "UnmatchedSpellsTitle": "Unconverted Spells",
       "UnmatchedSpellsBody": "These printed spells have no direct match in the spells compendium. Pick replacements by hand or drop them:",
       "ArtSuccess": "Artwork applied to {name}.",
-      "ArtFailed": "The actor was created, but artwork generation failed: {message}"
+      "ArtFailed": "The actor was created, but artwork generation failed: {message}",
+      "GearMissing": "No compendium match for this gear, so it was left off the inventory: {list}"
     },
     "Preview": {
       "Level": "Creature",
@@ -123,7 +127,8 @@
       "Spells": "Spells",
       "SpellLine": "DC {dc}, attack {attack} (add spells on the sheet)",
       "Strikes": "Strikes",
-      "Specials": "Abilities"
+      "Specials": "Abilities",
+      "Items": "Items"
     },
     "Generate": {
       "Working": "Working…",

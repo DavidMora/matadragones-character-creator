@@ -53,6 +53,20 @@ mapped to its remaster name and resolved against the pf2e spells compendium.
 A name with no compendium match is never guessed: it is listed in an
 "Unconverted Spells" note on the sheet for the GM to replace.
 
+## Gear
+
+Weapons, armour and shields are read from three places - the AC parenthetical
+("18 (chain mail, shield)"), the 2024 layout's Gear line, and the names of
+Strikes that are weapons rather than body parts - then resolved against the
+pf2e equipment compendium and added to the creature's inventory, held or worn
+the way official bestiary data does it. Natural attacks (bite, claw, slam)
+never become items.
+
+Following the Building Creatures guidance that a creature's statistics already
+account for its gear, none of this touches a number: AC, Strikes, HP and saves
+are identical with or without the inventory, and a test asserts exactly that.
+The builder tab has a free-text gear field with the same behaviour.
+
 ## Source-game-exclusive mechanics
 
 Machinery the source game has and PF2e does not is translated to the PF2e

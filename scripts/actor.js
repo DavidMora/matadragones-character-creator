@@ -11,6 +11,7 @@
  */
 import { MODULE_ID } from './constants.js';
 import { attachSpellcasting } from './spells.js';
+import { attachGear } from './equipment.js';
 
 const escapeHTML = (s) => String(s).replace(/[&<>"']/g, (c) => (
   { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
@@ -173,6 +174,7 @@ export async function createCreatureActor(spec) {
   if (!actor) throw new Error(game.i18n.localize('MCC.Errors.ActorCreateFailed'));
 
   const { created, missing } = await attachSpellcasting(actor, spec);
+  const gear = await attachGear(actor, spec);
   if (missing.length) {
     // The GM gets the unmatched names on the sheet itself, where the creature
     // is actually used - a toast alone would be gone by game night.
@@ -195,7 +197,19 @@ export async function createCreatureActor(spec) {
     );
   }
 
-  console.log(`${MODULE_ID} | created actor ${actor.name} (${actor.id}), ${created} spells attached`);
+  if (gear.missing.length) {
+    // Gear is cosmetic, so an unmatched name is a console note and a toast,
+    // not an item on the sheet - the Strike it came from already works.
+    console.warn(`${MODULE_ID} | no compendium match for gear: ${gear.missing.join(', ')}`);
+    ui.notifications.info(
+      game.i18n.format('MCC.Create.GearMissing', { list: gear.missing.join(', ') }),
+    );
+  }
+
+  console.log(
+    `${MODULE_ID} | created actor ${actor.name} (${actor.id}), `
+    + `${created} spells and ${gear.created} items attached`,
+  );
   return actor;
 }
 

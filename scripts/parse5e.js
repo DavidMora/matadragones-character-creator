@@ -78,6 +78,7 @@ export function parse5eStatBlock(rawText) {
     tags: '',
     ac: null,
     acNote: '',
+    gearLine: '',
     hp: null,
     hpFormula: '',
     speeds: { walk: null, others: [] },
@@ -150,6 +151,9 @@ export function parse5eStatBlock(rawText) {
     }
   }
   if (data.hp === null) missing.push('Hit Points');
+
+  // The 2024 layout lists carried gear on its own line.
+  data.gearLine = field('Gear') ?? '';
 
   const speedText = field('Speed');
   if (speedText) {

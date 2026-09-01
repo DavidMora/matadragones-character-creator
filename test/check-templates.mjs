@@ -59,6 +59,7 @@ const specContext = {
   speed: '25 feet',
   strikes: [{ line: 'Jaws +14, 2d8+5 piercing' }],
   skills: 'Athletics +12',
+  items: 'chain mail, longsword',
   spell: null,
   spellEntries: [{ line: 'Innate Spellcasting (divine) DC 21, attack +13: translocate (at will)' }],
   languages: 'common',
@@ -94,6 +95,7 @@ const context = {
     name: 'Draft',
     level: [{ value: 3, selected: true }],
     speed: 25,
+    gear: 'chain mail, longsword',
     description: 'desc',
     traits: 'undead',
     roadMaps: [{ value: 'brute', label: 'Brute', selected: true }],
@@ -114,6 +116,8 @@ const builderHtml = shell({ ...context, isImport: false, isBuilder: true });
 
 check('import tab renders its preview', importHtml.includes('Preview Beast'), true);
 check('spell entries render in the preview', importHtml.includes('translocate (at will)'), true);
+check('items render in the preview', importHtml.includes('chain mail, longsword'), true);
+check('builder exposes a gear field', builderHtml.includes('data-bind="builder.gear"'), true);
 check('import tab shows the missing-field warning', importHtml.includes('MCC.Import.MissingField'), true);
 check('builder tab renders rows', builderHtml.includes('builder.strike.0.name'), true);
 check('builder remove buttons carry their index',

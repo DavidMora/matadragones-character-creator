@@ -56,6 +56,13 @@
         </label>
       </div>
       <label class="mcc-field">
+        <span>{{localize 'MCC.Builder.Gear'}}</span>
+        <input type="text" data-bind="builder.gear" value="{{builder.gear}}"
+               placeholder="{{localize 'MCC.Builder.GearPlaceholder'}}" {{#if busy}}disabled{{/if}}>
+        <small>{{localize 'MCC.Builder.GearHint'}}</small>
+      </label>
+
+      <label class="mcc-field">
         <span>{{localize 'MCC.Builder.Description'}}</span>
         <textarea data-bind="builder.description" rows="2"
                   placeholder="{{localize 'MCC.Builder.DescriptionPlaceholder'}}"

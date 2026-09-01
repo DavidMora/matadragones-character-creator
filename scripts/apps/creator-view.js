@@ -45,7 +45,7 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
 
   constructor(options = {}) {
     super(options);
-    this.#builder = { ...seedFromRoadMap('balanced', 3), name: '', size: 'med', rarity: 'common', traits: [], speed: 25, description: '', strikes: [{ name: 'Fist', kind: 'melee', damageType: 'bludgeoning' }], skills: [] };
+    this.#builder = { ...seedFromRoadMap('balanced', 3), name: '', size: 'med', rarity: 'common', traits: [], speed: 25, description: '', gear: '', strikes: [{ name: 'Fist', kind: 'melee', damageType: 'bludgeoning' }], skills: [] };
   }
 
   static DEFAULT_OPTIONS = {
@@ -136,6 +136,7 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
       name: draft.name,
       level: levelOptions(draft.level),
       speed: draft.speed,
+      gear: draft.gear,
       description: draft.description,
       traits: (draft.traits ?? []).join(', '),
       roadMaps: Object.entries(ROAD_MAPS).map(([value, map]) => ({
@@ -252,6 +253,7 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
             + (s.constant ? ' (constant)' : s.atWill ? ' (at will)' : s.uses ? ` (${s.uses}/day)` : '')).join(', '),
       })),
       languages: [spec.languages.join(', '), spec.languageDetails].filter(Boolean).join('; '),
+      items: (spec.equipment ?? []).join(', '),
       specials: spec.specials.map((s) => ({
         name: s.name,
         actionType: s.actionType,

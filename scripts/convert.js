@@ -12,6 +12,7 @@
 import { baselineForCR, levelFromCR } from './baseline5e.js';
 import { damagePerRound } from './parse5e.js';
 import { modernizeSpellNames } from './spellnames.js';
+import { gearFromParsed } from './equipment.js';
 import {
   legendaryTriggerPrefix,
   translateMechanicsText,
@@ -361,6 +362,9 @@ export function convertCreature(data, { level: levelOverride, tiers: tierOverrid
         }
       : null,
     spellcasting,
+    // Descriptive only: the tables above already account for the creature's
+    // gear, so nothing here feeds back into AC, attack or damage.
+    equipment: gearFromParsed(data),
     specials: built.specials,
     // One set: "Damage Immunities poison" and "Condition Immunities poisoned"
     // both map to the poison slug and must not list it twice.
@@ -714,6 +718,14 @@ export function specFromBuilder(draft) {
       ? { tier: draft.spell, dc: spellDCFor(level, draft.spell), attack: spellAttackFor(level, draft.spell) }
       : null,
     spellcasting: null,
+    // A builder strike named for a real weapon puts that weapon in the
+    // creature's hands, same rule as the importer: descriptive, never
+    // feeding back into the numbers.
+    equipment: gearFromParsed({
+      acNote: '',
+      gearLine: draft.gear ?? '',
+      attacks: (draft.strikes ?? []).map((s) => ({ name: s.name ?? '' })),
+    }),
     specials: [],
     immunities: [],
     resistances: [],

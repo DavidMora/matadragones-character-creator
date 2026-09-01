@@ -97,7 +97,10 @@
       "SkillsHeading": "Habilidades",
       "SkillsTooltip": "Habilidades con su rango; el modificador sale de la tabla de habilidades para el nivel.",
       "AddSkill": "Añadir habilidad",
-      "RemoveSkill": "Quitar esta habilidad"
+      "RemoveSkill": "Quitar esta habilidad",
+      "Gear": "Equipo",
+      "GearPlaceholder": "cota de malla, espada larga, escudo",
+      "GearHint": "Solo se lista en la ficha; las estadísticas de arriba ya tienen en cuenta el equipo."
     },
     "Create": {
       "Submit": "Crear actor",
@@ -109,7 +112,8 @@
       "UnmatchedSpellsTitle": "Conjuros sin convertir",
       "UnmatchedSpellsBody": "Estos conjuros impresos no tienen equivalente directo en el compendio de conjuros. Elige sustitutos a mano o descártalos:",
       "ArtSuccess": "Ilustración aplicada a {name}.",
-      "ArtFailed": "El actor se creó, pero la generación de la ilustración falló: {message}"
+      "ArtFailed": "El actor se creó, pero la generación de la ilustración falló: {message}",
+      "GearMissing": "Sin equivalente en el compendio, así que este equipo se dejó fuera del inventario: {list}"
     },
     "Preview": {
       "Level": "Criatura",
@@ -123,7 +127,8 @@
       "Spells": "Conjuros",
       "SpellLine": "CD {dc}, ataque {attack} (añade conjuros en la ficha)",
       "Strikes": "Golpes",
-      "Specials": "Habilidades"
+      "Specials": "Habilidades",
+      "Items": "Objetos"
     },
     "Generate": {
       "Working": "Trabajando…",

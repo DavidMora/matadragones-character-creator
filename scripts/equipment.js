@@ -1,0 +1,157 @@
+/**
+ * Gear: the weapons, armour and shields a creature carries, resolved from the
+ * pf2e equipment compendium and added to its inventory.
+ *
+ * The Building Creatures guidance is explicit that a creature's statistics
+ * already account for its gear - the tables set AC, attack and damage, and
+ * the items listed beside them are descriptive. This module honours that
+ * literally: nothing here touches a number. An imported creature's AC comes
+ * from the AC table whether it wears chain mail or nothing at all, and its
+ * Strikes are `melee` items built by convert.js, independent of the weapon
+ * sitting in the inventory. Adding a battleaxe makes the sheet say what the
+ * creature is holding; it does not restat the axe.
+ *
+ * Storage follows official bestiary data (verified against the
+ * pathfinder-monster-core pack): weapons and shields are `held` with one
+ * hand, armour is `worn` and in its slot.
+ */
+
+const EQUIPMENT_PACK = 'pf2e.equipment-srd';
+
+/** Natural weaponry: a body part, never an inventory item. */
+const NATURAL_ATTACKS = new RegExp(
+  '^(bite|claw|claws|slam|tail|tentacle|tentacles|sting|gore|hoof|hooves|talon|talons|'
+  + 'fist|pincer|pseudopod|horn|beak|wing|tongue|spine|spines|quill|quills|stomp|'
+  + 'trample|constrict|rend|touch|ram|maw|jaws|fangs|proboscis|barb|hook)\\b',
+  'i',
+);
+
+/**
+ * Source-game gear names -> the pf2e compendium's names. Only entries whose
+ * spelling actually differs need to be here; anything else matches directly
+ * and is validated by check-equipment.mjs.
+ */
+export const GEAR_MAP = {
+  battleaxe: 'battle axe',
+  handaxe: 'hatchet',
+  quarterstaff: 'staff',
+  'light crossbow': 'crossbow',
+  'hand crossbow': 'hand crossbow',
+  'short sword': 'shortsword',
+  shortsword: 'shortsword',
+  'studded leather': 'studded leather armor',
+  leather: 'leather armor',
+  hide: 'hide armor',
+  'ring mail': 'chain mail',
+  'scale mail': 'scale mail',
+  'chain shirt': 'chain shirt',
+  'splint armor': 'splint mail',
+  splint: 'splint mail',
+  plate: 'full plate',
+  'plate armor': 'full plate',
+  'plate mail': 'full plate',
+  'half plate': 'half plate',
+  shield: 'steel shield',
+  'wooden shield': 'wooden shield',
+  greatclub: 'greatclub',
+  maul: 'maul',
+  morningstar: 'morningstar',
+  sickle: 'sickle',
+  scimitar: 'scimitar',
+  'war pick': 'war flail',
+};
+
+/** Things that are not gear even though they appear in an AC parenthetical. */
+const NOT_GEAR = /^(natural armor|natural|armor|unarmored defense|mage armor|barkskin|with shield|see below|none|\d+)$/i;
+
+export function normaliseGearName(raw) {
+  const name = String(raw)
+    .toLowerCase()
+    .replace(/\+\d+\s*/g, '')
+    .replace(/\b(a|an|the)\b/g, '')
+    .replace(/\([^)]*\)/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/s$/, (s, i, whole) => (whole.endsWith('ss') ? s : ''));
+  if (!name || NOT_GEAR.test(name)) return null;
+  return GEAR_MAP[name] ?? name;
+}
+
+/**
+ * Everything the creature visibly carries, from three places: the AC
+ * parenthetical ("Armor Class 18 (chain mail, shield)"), the 2024 layout's
+ * Gear line, and the names of Strikes that are weapons rather than body
+ * parts. Deduplicated, order stable.
+ */
+export function gearFromParsed(data) {
+  const found = [];
+  const add = (raw) => {
+    const name = normaliseGearName(raw);
+    if (name && !found.includes(name)) found.push(name);
+  };
+
+  for (const part of (data.acNote ?? '').split(/,|\band\b/)) add(part);
+  for (const part of (data.gearLine ?? '').split(/,|\band\b/)) add(part);
+  for (const attack of data.attacks ?? []) {
+    if (NATURAL_ATTACKS.test(attack.name)) continue;
+    // "Longsword (two-handed)" and "Greataxe +1" both name one weapon.
+    add(attack.name);
+  }
+  return found;
+}
+
+/** A finder backed by the equipment compendium: name -> source or null. */
+export async function compendiumGearFinder() {
+  const pack = game.packs.get(EQUIPMENT_PACK);
+  if (!pack) return null;
+  const index = await pack.getIndex({ fields: ['type', 'system.slug'] });
+  return async (name) => {
+    const wanted = String(name).toLowerCase();
+    const hit = index.find((e) => e.name.toLowerCase() === wanted)
+      ?? index.find((e) => e.system?.slug === wanted.replace(/[^a-z0-9]+/g, '-'));
+    if (!hit) return null;
+    const doc = await pack.getDocument(hit._id);
+    return doc?.toObject() ?? null;
+  };
+}
+
+/** How a piece of gear is carried, by item type. */
+export function equippedState(type) {
+  return type === 'armor'
+    ? { carryType: 'worn', handsHeld: 0, inSlot: true, invested: null }
+    : { carryType: 'held', handsHeld: 1, invested: null };
+}
+
+/** A compendium source made ready to embed on the creature. */
+export function gearSource(base) {
+  const source = structuredClone(base);
+  delete source._id;
+  delete source.folder;
+  source.system.quantity = 1;
+  source.system.equipped = equippedState(source.type);
+  return source;
+}
+
+/**
+ * Add the spec's gear to an existing actor. Returns what happened so the
+ * caller can tell the GM which names went unmatched, exactly as the spell
+ * path does.
+ */
+export async function attachGear(actor, spec, { findGear } = {}) {
+  const wanted = spec.equipment ?? [];
+  if (wanted.length === 0) return { created: 0, missing: [] };
+
+  const finder = findGear ?? await compendiumGearFinder();
+  const sources = [];
+  const missing = [];
+  for (const name of wanted) {
+    const base = finder ? await finder(name) : null;
+    if (!base) {
+      missing.push(name);
+      continue;
+    }
+    sources.push(gearSource(base));
+  }
+  if (sources.length) await actor.createEmbeddedDocuments('Item', sources);
+  return { created: sources.length, missing };
+}

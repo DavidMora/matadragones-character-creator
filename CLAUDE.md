@@ -21,6 +21,18 @@ apply here too.
 - **The tables are transcriptions.** Do not "fix" a value in `tables.js` by
   arithmetic; check the book. `check-tables.mjs` catches internal
   inconsistency, not external truth.
+- **Gear is descriptive, never mechanical.** Building Creatures is explicit
+  that a creature's statistics already account for its equipment, so
+  `equipment.js` must never feed back into AC, attack or damage;
+  `check-equipment.mjs` asserts the numbers are identical with gear stripped.
+- **Compendium-backed maps are validated by snapshot.** `spellnames.js` and
+  `GEAR_MAP` are checked against `test/spell-names.json` /
+  `test/equipment-names.json`: every target must resolve, and (for spells) no
+  source may shadow a name the compendium still knows. Regenerate the
+  snapshots after a system update rather than editing maps by hand; the spell
+  list itself comes from the system's own
+  `packs/pf2e/journals/remaster-changes.json`, not the wiki page, which is a
+  stale copy with swapped dimensional anchor/lock rows.
 - **The OpenAI key stays client-scoped.** World settings are readable by every
   player regardless of `restricted`.
 - **pf2e schemas were verified against the system source** (v7.12/v8.4):
@@ -40,6 +52,9 @@ apply here too.
 | Stat block text → structure (2014+2024) | `scripts/parse5e.js` |
 | Classification, spec building, DC rewriting | `scripts/convert.js` |
 | Spec → pf2e actor payload | `scripts/actor.js` |
+| Spell entries + compendium resolution | `scripts/spells.js`, `scripts/spellnames.js` |
+| Gear extraction + compendium resolution | `scripts/equipment.js` |
+| Source-game-only mechanics (Legendary Resistance, advantage, recharge) | `scripts/mechanics5e.js` |
 | OpenAI text/image calls | `scripts/ai/` |
 | The window (both tabs, `data-bind` state) | `scripts/apps/creator-view.js` |
 
