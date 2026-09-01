@@ -211,6 +211,64 @@
       "NotAnImage": "That file is not an image.",
       "NoImageReturned": "The API returned no image data.",
       "UploadFailed": "Saving the generated image into the world data directory failed."
+    },
+    "Concept": {
+      "Heading": "Describe the creature",
+      "Tooltip": "Say what you want in a sentence. The model chooses the concept and the relative strength of each statistic; every number still comes from the Building Creatures tables, and the creature's level comes from the party level and role below, by the published encounter budget.",
+      "Brief": "Brief",
+      "BriefPlaceholder": "an evil necromancer who raises the fallen mid-fight",
+      "BriefRequired": "Describe the creature you want first.",
+      "PartyLevel": "Party level",
+      "PartySize": "Party size",
+      "Role": "Role in the fight",
+      "LevelShort": "lvl",
+      "Submit": "Design creature",
+      "Ready": "Concept ready: {name} (level {level}). Review and adjust before creating.",
+      "Corrected": "{count} value(s) were outside the creature-building rules and were corrected.",
+      "BudgetLine": "Worth {xp} XP against this party — {threat} on its own; about {count} fit a moderate encounter ({budget} XP).",
+      "BudgetTooltip": "From the published encounter-building tables: a creature costs XP by its level relative to the party, and a party of N has a moderate budget of 20xN XP."
+    },
+    "Role": {
+      "Solo": "Solo boss (party +3)",
+      "Boss": "Boss (party +2)",
+      "Elite": "Elite (party +1)",
+      "Matched": "Matched (party level)",
+      "Lackey": "Lackey (party -2)",
+      "Minion": "Minion (party -4)"
+    },
+    "Threat": {
+      "trivial": "trivial",
+      "low": "low",
+      "moderate": "moderate",
+      "severe": "severe",
+      "extreme": "extreme"
+    },
+    "Drop": {
+      "Heading": "Drag in spells, abilities and gear",
+      "Tooltip": "Drag any item from a compendium or the sidebar into a box below. Dropped documents are cloned onto the creature exactly as they are, so their rules elements keep working.",
+      "Invite": "Drop items here",
+      "Remove": "Remove",
+      "Added": "Added {name}.",
+      "Duplicate": "{name} is already on this creature.",
+      "Unresolved": "That item could not be read.",
+      "WrongType": "A {type} cannot be added to a creature this way.",
+      "Bucket": {
+        "spells": "Spells",
+        "specials": "Abilities & feats",
+        "gear": "Gear"
+      }
+    },
+    "Rules": {
+      "BadTier": "{stat} cannot be {tier}; the table offers {allowed}.",
+      "BadLevel": "Level {level} is outside the tables (-1 to 24).",
+      "TooManyExtremes": "{count} extreme statistics: extremes are a creature’s signature, and more than two is outside the rules.",
+      "TwoExtremes": "Two extreme statistics — reserve these for what the creature is famous for.",
+      "OverBudget": "Power score {score} is above every published road map (max {max}). Pay for a strength with a low statistic.",
+      "UnderBudget": "Power score {score} is below every published road map (min {min}). This creature may be a pushover for its level.",
+      "NoWeakness": "Strong AC, HP, attack and damage together leave players no angle; the road maps always concede something.",
+      "Corrected": "{key}: {from} → {to}",
+      "Score": "Power score {score} (published road maps: {band})",
+      "ScoreTooltip": "Tier points summed across the statistics: extreme +2, high +1, moderate 0, low -1, terrible -2. The band is measured from the published road maps, so anything the book endorses passes."
     }
   }
 }

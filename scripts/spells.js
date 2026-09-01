@@ -87,11 +87,12 @@ export function spellSource(base, entryId, spell) {
  * Two passes per entry because a spell must name its entry's real id. Returns
  * what happened so the caller can put unmatched names in front of the GM.
  */
-export async function attachSpellcasting(actor, spec, { findSpell } = {}) {
+export async function attachSpellcasting(actor, spec, { findSpell, resolveUuid } = {}) {
   const entries = spec.spellcasting?.entries ?? [];
   if (entries.length === 0) return { created: 0, missing: [] };
 
   const finder = findSpell ?? await compendiumSpellFinder();
+  const byUuid = resolveUuid ?? (typeof fromUuid === 'function' ? fromUuid : null);
   const missing = [];
   let created = 0;
 
@@ -100,7 +101,13 @@ export async function attachSpellcasting(actor, spec, { findSpell } = {}) {
     const entryId = entryDoc._id ?? entryDoc.id;
     const sources = [];
     for (const spell of entry.spells) {
-      const base = finder ? await finder(spell.name) : null;
+      // A spell the GM dragged in is already the document they chose.
+      let base = null;
+      if (spell.uuid && byUuid) {
+        const doc = await byUuid(spell.uuid);
+        base = doc?.toObject ? doc.toObject() : doc;
+      }
+      if (!base) base = finder ? await finder(spell.name) : null;
       if (!base) {
         missing.push(spell.name);
         continue;

@@ -53,6 +53,39 @@ mapped to its remaster name and resolved against the pf2e spells compendium.
 A name with no compendium match is never guessed: it is listed in an
 "Unconverted Spells" note on the sheet for the GM to replace.
 
+## Designing a creature from a sentence
+
+The builder tab takes a brief - "an evil necromancer who raises the fallen
+mid-fight" - plus your party's level and size and the role you want the
+creature to play, and asks OpenAI for a *concept*: name, description, traits,
+a road map, and a tier for each statistic. It cannot propose a number: the
+schema has no field for AC, HP, an attack bonus, damage, a save, a skill
+modifier or a DC, so every value still comes out of the Building Creatures
+tables, and abilities written with a bare "DC" get the creature's real one.
+
+The creature's **level** is not the model's either. It comes from your party
+level and the chosen role through the published encounter-building tables
+(solo boss is party+3, boss +2, elite +1, matched, lackey -2, minion -4), and
+the panel shows what the result costs in XP and how it rates against your
+party's budget before you create anything.
+
+Every draft - typed by hand or proposed by the model - is checked against the
+creature-building rules. Hard rules are the tables' own vocabulary (AC has no
+terrible column, HP has three tiers, spell DCs stop at moderate, levels run
+-1 to 24) and are corrected automatically, with each correction reported.
+Budget warnings flag a creature with more than two extreme statistics, or one
+whose power score falls outside the range the published road maps occupy -
+a band measured from those road maps, so anything the book endorses passes.
+
+## Dragging in spells, abilities and gear
+
+Drag any item from a compendium or the sidebar into the builder's drop zones.
+Spells join the creature's innate entry, actions and feats become abilities,
+weapons and armour land in the inventory - and each is cloned from the exact
+document you dropped, so its rules elements keep working. Dropped NPC attacks
+contribute their name and are re-statted from the tables like any other
+Strike.
+
 ## Gear
 
 Weapons, armour and shields are read from three places - the AC parenthetical

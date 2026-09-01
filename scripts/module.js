@@ -10,6 +10,7 @@ Hooks.once('init', () => {
   // Namespaced so the templates never depend on which comparison helpers a
   // given Foundry version happens to ship.
   Handlebars.registerHelper('mccEq', (a, b) => a === b);
+  Handlebars.registerHelper('mccConcat', (...args) => args.slice(0, -1).join(''));
 
   // The whole deterministic pipeline is exposed so a macro or another module
   // can convert without the window: parse -> convert -> create.

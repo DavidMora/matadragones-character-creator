@@ -70,6 +70,9 @@ export function actorDataFromSpec(spec) {
   }
 
   for (const special of spec.specials ?? []) {
+    // Dropped items are cloned wholesale after creation, so they are not
+    // rebuilt as actions here.
+    if (special.uuid) continue;
     items.push({
       name: special.name,
       type: 'action',
@@ -175,6 +178,7 @@ export async function createCreatureActor(spec) {
 
   const { created, missing } = await attachSpellcasting(actor, spec);
   const gear = await attachGear(actor, spec);
+  await attachDroppedSpecials(actor, spec);
   if (missing.length) {
     // The GM gets the unmatched names on the sheet itself, where the creature
     // is actually used - a toast alone would be gone by game night.
@@ -211,6 +215,32 @@ export async function createCreatureActor(spec) {
     + `${created} spells and ${gear.created} items attached`,
   );
   return actor;
+}
+
+/**
+ * Abilities the GM dragged in are cloned as the documents they are - rules
+ * elements, images and all - rather than flattened into a text action.
+ */
+export async function attachDroppedSpecials(actor, spec, { resolveUuid } = {}) {
+  const dropped = (spec.specials ?? []).filter((special) => special.uuid);
+  if (dropped.length === 0) return { created: 0, missing: [] };
+
+  const byUuid = resolveUuid ?? (typeof fromUuid === 'function' ? fromUuid : null);
+  const sources = [];
+  const missing = [];
+  for (const special of dropped) {
+    const doc = byUuid ? await byUuid(special.uuid) : null;
+    const base = doc?.toObject ? doc.toObject() : doc;
+    if (!base) {
+      missing.push(special.name);
+      continue;
+    }
+    delete base._id;
+    delete base.folder;
+    sources.push(base);
+  }
+  if (sources.length) await actor.createEmbeddedDocuments('Item', sources);
+  return { created: sources.length, missing };
 }
 
 /** Point both the portrait and the prototype token at a saved image. */

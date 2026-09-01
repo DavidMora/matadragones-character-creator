@@ -1,4 +1,52 @@
 <section class="mcc-tab mcc-builder">
+  <div class="mcc-concept">
+    <h3>{{localize 'MCC.Concept.Heading'}}
+      <i class="fa-solid fa-circle-info" data-tooltip="{{localize 'MCC.Concept.Tooltip'}}"></i>
+    </h3>
+    <div class="mcc-row">
+      <label class="mcc-field mcc-field-wide">
+        <span>{{localize 'MCC.Concept.Brief'}}</span>
+        <input type="text" data-bind="concept.brief" value="{{concept.brief}}"
+               placeholder="{{localize 'MCC.Concept.BriefPlaceholder'}}" {{#if busy}}disabled{{/if}}>
+      </label>
+      <label class="mcc-field">
+        <span>{{localize 'MCC.Concept.PartyLevel'}}</span>
+        <input type="number" data-bind="concept.partyLevel" value="{{concept.partyLevel}}"
+               min="1" max="20" step="1" {{#if busy}}disabled{{/if}}>
+      </label>
+      <label class="mcc-field">
+        <span>{{localize 'MCC.Concept.PartySize'}}</span>
+        <input type="number" data-bind="concept.partySize" value="{{concept.partySize}}"
+               min="1" max="10" step="1" {{#if busy}}disabled{{/if}}>
+      </label>
+      <label class="mcc-field">
+        <span>{{localize 'MCC.Concept.Role'}}</span>
+        <select data-bind="concept.role" {{#if busy}}disabled{{/if}}>
+          {{#each concept.roles}}
+            <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}} ({{localize 'MCC.Concept.LevelShort'}} {{level}})</option>
+          {{/each}}
+        </select>
+      </label>
+    </div>
+    <div class="mcc-row mcc-budget">
+      <span class="mcc-note" data-tooltip="{{localize 'MCC.Concept.BudgetTooltip'}}">
+        <i class="fa-solid fa-scale-balanced"></i>
+        {{localize 'MCC.Concept.BudgetLine' xp=concept.xp threat=concept.threat budget=concept.moderateBudget count=concept.fitModerate}}
+      </span>
+      {{#if concept.busy}}
+        <span class="mcc-busy"><i class="fa-solid fa-spinner fa-spin"></i> {{localize 'MCC.Generate.Working'}}</span>
+        <button type="button" data-action="cancel">{{localize 'MCC.Generate.Cancel'}}</button>
+      {{else}}
+        <button type="button" data-action="concept" {{#unless hasApiKey}}disabled{{/unless}} {{#if busy}}disabled{{/if}}>
+          <i class="fa-solid fa-wand-magic-sparkles"></i> {{localize 'MCC.Concept.Submit'}}
+        </button>
+      {{/if}}
+    </div>
+    {{#each concept.corrections}}
+      <p class="mcc-warning"><i class="fa-solid fa-wrench"></i> {{this}}</p>
+    {{/each}}
+  </div>
+
   <div class="mcc-columns">
     <div class="mcc-column mcc-column-input">
       <h3>{{localize 'MCC.Builder.BasicsHeading'}}
@@ -155,11 +203,48 @@
       <button type="button" class="mcc-add" data-action="addSkill" {{#if busy}}disabled{{/if}}>
         <i class="fa-solid fa-plus"></i> {{localize 'MCC.Builder.AddSkill'}}
       </button>
+
+      <h3>{{localize 'MCC.Drop.Heading'}}
+        <i class="fa-solid fa-circle-info" data-tooltip="{{localize 'MCC.Drop.Tooltip'}}"></i>
+      </h3>
+      <div class="mcc-drop-grid">
+        {{#each builder.drops}}
+          <div class="mcc-drop-zone" data-bucket="{{@key}}">
+            <h4>{{localize (mccConcat 'MCC.Drop.Bucket.' @key)}}</h4>
+            <p class="mcc-drop-hint">{{localize 'MCC.Drop.Invite'}}</p>
+            <ul class="mcc-drop-list">
+              {{#each this}}
+                <li>
+                  {{#if img}}<img src="{{img}}" alt="">{{/if}}
+                  <span>{{name}}</span>
+                  <button type="button" data-action="removeDrop" data-bucket="{{bucket}}" data-index="{{index}}"
+                          data-tooltip="{{localize 'MCC.Drop.Remove'}}">
+                    <i class="fa-solid fa-xmark"></i>
+                  </button>
+                </li>
+              {{/each}}
+            </ul>
+          </div>
+        {{/each}}
+      </div>
     </div>
 
     <div class="mcc-column mcc-column-preview">
       {{> mccSpecPreview builderSpec}}
     </div>
+  </div>
+
+  <div class="mcc-rules">
+    {{#each rules.errors}}
+      <p class="mcc-error"><i class="fa-solid fa-circle-exclamation"></i> {{this}}</p>
+    {{/each}}
+    {{#each rules.warnings}}
+      <p class="mcc-warning"><i class="fa-solid fa-triangle-exclamation"></i> {{this}}</p>
+    {{/each}}
+    <p class="mcc-note" data-tooltip="{{localize 'MCC.Rules.ScoreTooltip'}}">
+      <i class="fa-solid fa-scale-balanced"></i>
+      {{localize 'MCC.Rules.Score' score=rules.score band=rules.band}}
+    </p>
   </div>
 
   <footer class="mcc-footer">

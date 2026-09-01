@@ -19,6 +19,10 @@ import { createCreatureActor, applyArtwork } from '../actor.js';
 import { activeModel, hasApiKey } from '../ai/openai.js';
 import { generateImage, saveImage } from '../ai/image.js';
 import { aiParseStatBlock, aiRewriteAbilities, portraitPrompt } from '../ai/assist.js';
+import { generateConcept, conceptToDraft } from '../ai/concept.js';
+import { ROLES, budgetSummary, levelForRole } from '../encounter.js';
+import { validateDraft, budgetScore, publishedBand } from '../creature-rules.js';
+import { readDropData, describeDropped, droppedToSpecial, addDrop } from '../drops.js';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -40,12 +44,25 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
   #importLevel = null;
   #importTiers = {};
   #builder = null;
-  #busy = null; // null | 'parse' | 'rewrite' | 'create' | 'artwork'
+  #busy = null; // null | 'parse' | 'rewrite' | 'concept' | 'create' | 'artwork'
+  #brief = '';
+  #partyLevel = 1;
+  #partySize = 4;
+  #role = 'matched';
+  #corrections = [];
   #abort = null;
 
   constructor(options = {}) {
     super(options);
-    this.#builder = { ...seedFromRoadMap('balanced', 3), name: '', size: 'med', rarity: 'common', traits: [], speed: 25, description: '', gear: '', strikes: [{ name: 'Fist', kind: 'melee', damageType: 'bludgeoning' }], skills: [] };
+    this.#builder = {
+      ...seedFromRoadMap('balanced', 3),
+      name: '', size: 'med', rarity: 'common', traits: [], speed: 25,
+      description: '', gear: '', tradition: null,
+      senses: [], languages: [], conceptSpells: [], conceptSpecials: [],
+      strikes: [{ name: 'Fist', kind: 'melee', damageType: 'bludgeoning' }],
+      skills: [],
+      drops: { spells: [], specials: [], gear: [], strikes: [] },
+    };
   }
 
   static DEFAULT_OPTIONS = {
@@ -68,6 +85,8 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
       removeStrike: CreatorView.#onRemoveStrike,
       addSkill: CreatorView.#onAddSkill,
       removeSkill: CreatorView.#onRemoveSkill,
+      concept: CreatorView.#onConcept,
+      removeDrop: CreatorView.#onRemoveDrop,
       cancel: CreatorView.#onCancel,
     },
   };
@@ -131,7 +150,7 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
 
     // Builder tab
     const draft = this.#builder;
-    const builderSpec = specFromBuilder(draft);
+    const builderSpec = specFromBuilder(this.#draftForSpec());
     context.builder = {
       name: draft.name,
       level: levelOptions(draft.level),
@@ -178,7 +197,43 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
         options: PF2E_SKILLS.map((value) => ({ value, selected: value === skill.slug })),
         tiers: tierOptions(skill.tier, ['extreme', 'high', 'moderate', 'low']),
       })),
+      drops: Object.fromEntries(['spells', 'specials', 'gear'].map((bucket) => [bucket,
+        draft.drops[bucket].map((entry, index) => ({ ...entry, index, bucket })),
+      ])),
     };
+
+    // The AI concept panel, and the encounter maths behind the level it uses.
+    const level = levelForRole(this.#partyLevel, this.#role);
+    const budget = budgetSummary(this.#partyLevel, this.#partySize, draft.level);
+    context.concept = {
+      brief: this.#brief,
+      partyLevel: this.#partyLevel,
+      partySize: this.#partySize,
+      busy: this.#busy === 'concept',
+      roles: Object.entries(ROLES).map(([value, role]) => ({
+        value,
+        label: game.i18n.localize(role.label),
+        selected: value === this.#role,
+        level: levelForRole(this.#partyLevel, value),
+      })),
+      suggestedLevel: level,
+      xp: budget.xp,
+      threat: game.i18n.localize(`MCC.Threat.${budget.alone}`),
+      moderateBudget: budget.budgets.moderate,
+      fitModerate: budget.fitModerate,
+      corrections: this.#corrections.map((c) => game.i18n.format('MCC.Rules.Corrected', c)),
+    };
+
+    // Guardrails, recomputed every render so the GM sees them while editing.
+    const { errors, warnings } = validateDraft(draft);
+    const band = publishedBand();
+    context.rules = {
+      errors: errors.map((e) => game.i18n.format(e.message, e.data)),
+      warnings: warnings.map((w) => game.i18n.format(w.message, w.data)),
+      score: budgetScore(draft),
+      band: `${band.min}..${band.max}`,
+    };
+
     context.builderSpec = this.#specContext(builderSpec);
     return context;
   }
@@ -273,6 +328,80 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
     if (this.#changeBound) return;
     this.#changeBound = true;
     this.element.addEventListener('change', (event) => this.#onFieldChange(event));
+
+    // ApplicationV2 has no drag-drop support of its own, so the listeners are
+    // wired by hand - once, on the frame, and delegated to whichever zone the
+    // pointer is actually over.
+    this.element.addEventListener('dragover', (event) => {
+      if (!event.target.closest?.('.mcc-drop-zone')) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'copy';
+    });
+    this.element.addEventListener('dragenter', (event) => {
+      const zone = event.target.closest?.('.mcc-drop-zone');
+      if (!zone) return;
+      event.preventDefault();
+      // dragenter/leave fire for child elements too, so track nesting depth
+      // rather than toggling a class on every crossing.
+      zone.dataset.depth = String((Number(zone.dataset.depth) || 0) + 1);
+      zone.classList.add('mcc-drop-hover');
+    });
+    this.element.addEventListener('dragleave', (event) => {
+      const zone = event.target.closest?.('.mcc-drop-zone');
+      if (!zone) return;
+      const depth = (Number(zone.dataset.depth) || 1) - 1;
+      zone.dataset.depth = String(Math.max(depth, 0));
+      if (depth <= 0) zone.classList.remove('mcc-drop-hover');
+    });
+    this.element.addEventListener('drop', (event) => {
+      const zone = event.target.closest?.('.mcc-drop-zone');
+      if (!zone) return;
+      event.preventDefault();
+      zone.dataset.depth = '0';
+      zone.classList.remove('mcc-drop-hover');
+      this.#handleDrop(event);
+    });
+  }
+
+  /** Resolve a dropped document and file it in the right bucket. */
+  async #handleDrop(event) {
+    const data = readDropData(event);
+    if (!data || data.type !== 'Item' || !data.uuid) return;
+
+    const item = await fromUuid(data.uuid);
+    if (!item) {
+      ui.notifications.warn(game.i18n.localize('MCC.Drop.Unresolved'));
+      return;
+    }
+
+    const entry = describeDropped(item);
+    if (!entry) {
+      ui.notifications.warn(game.i18n.format('MCC.Drop.WrongType', { type: item.type }));
+      return;
+    }
+    // A dropped NPC attack is a statted strike; the builder rebuilds strikes
+    // from its own tiers, so take the name and let the tables do the rest.
+    if (entry.bucket === 'strikes') {
+      this.#builder.strikes.push({ name: entry.name, kind: 'melee', damageType: 'bludgeoning' });
+      ui.notifications.info(game.i18n.format('MCC.Drop.Added', { name: entry.name }));
+      this.render();
+      return;
+    }
+
+    if (entry.bucket === 'specials') {
+      const special = droppedToSpecial(entry, item);
+      Object.assign(entry, { actionType: special.actionType, special });
+    }
+    if (entry.bucket === 'spells' && !this.#builder.spell) {
+      // A creature holding spells needs a spell DC tier to read them from.
+      this.#builder.spell = 'moderate';
+    }
+    if (!addDrop(this.#builder, entry)) {
+      ui.notifications.info(game.i18n.format('MCC.Drop.Duplicate', { name: entry.name }));
+      return;
+    }
+    ui.notifications.info(game.i18n.format('MCC.Drop.Added', { name: entry.name }));
+    this.render();
   }
 
   #onFieldChange(event) {
@@ -294,6 +423,18 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
         if (value === defaults[path[1]]) delete this.#importTiers[path[1]];
         else this.#importTiers[path[1]] = value;
       }
+      this.render();
+      return;
+    }
+
+    if (scope === 'concept') {
+      if (path[0] === 'brief') {
+        this.#brief = value;
+        return; // Typing a brief should not re-render mid-sentence.
+      }
+      if (path[0] === 'partyLevel') this.#partyLevel = Math.min(Math.max(Number(value) || 1, 1), 20);
+      if (path[0] === 'partySize') this.#partySize = Math.min(Math.max(Number(value) || 4, 1), 10);
+      if (path[0] === 'role') this.#role = value;
       this.render();
       return;
     }
@@ -387,7 +528,7 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   static async #onCreateBuilder() {
-    const spec = specFromBuilder(this.#builder);
+    const spec = specFromBuilder(this.#draftForSpec());
     if (!this.#builder.name?.trim()) {
       ui.notifications.warn(game.i18n.localize('MCC.Builder.NameRequired'));
       return;
@@ -413,6 +554,66 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
   static #onRemoveSkill(_event, target) {
     this.#builder.skills.splice(Number(target.dataset.index), 1);
     this.render();
+  }
+
+  /** "Create an evil necromancer to challenge my 5th level party." */
+  static async #onConcept() {
+    const field = this.element?.querySelector('[data-bind="concept.brief"]');
+    if (field) this.#brief = field.value;
+    if (!this.#brief.trim()) {
+      ui.notifications.warn(game.i18n.localize('MCC.Concept.BriefRequired'));
+      return;
+    }
+    if (!hasApiKey()) {
+      ui.notifications.error(game.i18n.localize('MCC.Errors.NoApiKey'));
+      return;
+    }
+
+    await this.#withBusy('concept', async (signal) => {
+      // The level is ours, from the party and the role, not the model's.
+      const level = levelForRole(this.#partyLevel, this.#role);
+      const concept = await generateConcept({
+        brief: this.#brief,
+        level,
+        role: game.i18n.localize(ROLES[this.#role]?.label ?? 'MCC.Role.Matched'),
+        partyLevel: this.#partyLevel,
+        partySize: this.#partySize,
+      }, { signal });
+
+      const { draft, corrections } = conceptToDraft(concept, level);
+      // Anything the GM already dragged in survives the concept landing.
+      this.#builder = { ...draft, drops: this.#builder.drops };
+      this.#corrections = corrections;
+      this.#tab = 'builder';
+      if (corrections.length) {
+        ui.notifications.info(
+          game.i18n.format('MCC.Concept.Corrected', { count: corrections.length }),
+        );
+      }
+      ui.notifications.info(game.i18n.format('MCC.Concept.Ready', { name: draft.name, level }));
+    });
+  }
+
+  static #onRemoveDrop(_event, target) {
+    const { bucket, index } = target.dataset;
+    this.#builder.drops[bucket]?.splice(Number(index), 1);
+    this.render();
+  }
+
+  /** The draft as the spec builder wants it: dropped specials flattened. */
+  #draftForSpec() {
+    const draft = this.#builder;
+    return {
+      ...draft,
+      drops: {
+        ...draft.drops,
+        specials: draft.drops.specials.map((entry) => entry.special ?? {
+          name: entry.name, uuid: entry.uuid, section: 'trait',
+          actionType: entry.actionType ?? 'passive', actions: null,
+          category: null, description: '',
+        }),
+      },
+    };
   }
 
   static #onCancel() {

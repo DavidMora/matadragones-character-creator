@@ -137,17 +137,27 @@ export function gearSource(base) {
  * caller can tell the GM which names went unmatched, exactly as the spell
  * path does.
  */
-export async function attachGear(actor, spec, { findGear } = {}) {
-  const wanted = spec.equipment ?? [];
+export async function attachGear(actor, spec, { findGear, resolveUuid } = {}) {
+  // Entries are {name, uuid}; a bare string is accepted from callers that
+  // only know a name.
+  const wanted = (spec.equipment ?? []).map((e) => (typeof e === 'string' ? { name: e, uuid: null } : e));
   if (wanted.length === 0) return { created: 0, missing: [] };
 
   const finder = findGear ?? await compendiumGearFinder();
+  const byUuid = resolveUuid ?? (typeof fromUuid === 'function' ? fromUuid : null);
   const sources = [];
   const missing = [];
-  for (const name of wanted) {
-    const base = finder ? await finder(name) : null;
+  for (const entry of wanted) {
+    // A dropped item is already the document the GM chose, so clone that
+    // rather than looking its name up again and risking a different printing.
+    let base = null;
+    if (entry.uuid && byUuid) {
+      const doc = await byUuid(entry.uuid);
+      base = doc?.toObject ? doc.toObject() : doc;
+    }
+    if (!base) base = finder ? await finder(entry.name) : null;
     if (!base) {
-      missing.push(name);
+      missing.push(entry.name);
       continue;
     }
     sources.push(gearSource(base));

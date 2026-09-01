@@ -261,3 +261,112 @@
 .mcc-open-button {
   width: auto;
 }
+
+/* --- AI concept panel -------------------------------------------------------- */
+
+.mcc-concept {
+  border: 1px solid var(--color-border-light-primary, #7a7971);
+  border-radius: 4px;
+  padding: 0.4rem 0.6rem;
+  margin-bottom: 0.4rem;
+  background: rgba(0, 0, 0, 0.03);
+  flex-shrink: 0;
+}
+
+.mcc-concept h3 { margin-top: 0.2rem; }
+
+.mcc-budget { justify-content: space-between; }
+
+.mcc-budget button { width: auto; }
+
+/* --- Drop zones -------------------------------------------------------------- */
+
+.mcc-drop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.5rem;
+}
+
+/*
+ * The invitation lives inside the zone, and the zone keeps a floor height:
+ * a drop target that collapses to a header strip is one nobody can hit.
+ */
+.mcc-drop-zone {
+  border: 2px dashed var(--color-border-light-tertiary, #b5b3a4);
+  border-radius: 4px;
+  padding: 0.4rem;
+  min-height: 6rem;
+}
+
+.mcc-drop-zone.mcc-drop-hover {
+  border-color: var(--color-shadow-primary, #ff6400);
+  background: rgba(255, 100, 0, 0.06);
+}
+
+.mcc-drop-zone h4 {
+  margin: 0 0 0.2rem;
+  font-size: var(--font-size-13, 13px);
+}
+
+.mcc-drop-hint {
+  margin: 0;
+  font-size: var(--font-size-11, 11px);
+  opacity: 0.7;
+  font-style: italic;
+}
+
+.mcc-drop-list {
+  list-style: none;
+  margin: 0.3rem 0 0;
+  padding: 0;
+}
+
+.mcc-drop-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: var(--font-size-12, 12px);
+  padding: 0.1rem 0;
+}
+
+.mcc-drop-list img {
+  width: 1.2rem;
+  height: 1.2rem;
+  border: 0;
+  flex-shrink: 0;
+}
+
+.mcc-drop-list span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mcc-drop-list button {
+  width: auto;
+  flex: 0 0 auto;
+  line-height: 1;
+  padding: 0 0.25rem;
+  background: transparent;
+  border: 0;
+  opacity: 0.7;
+}
+
+.mcc-drop-list button:hover { opacity: 1; }
+
+/* --- Rules guardrails --------------------------------------------------------- */
+
+.mcc-rules {
+  flex-shrink: 0;
+  border-top: 1px solid var(--color-border-light-tertiary, #b5b3a4);
+  padding-top: 0.3rem;
+}
+
+.mcc-rules p { margin: 0.1rem 0; }
+
+.mcc-error {
+  color: var(--color-level-error, #b60205);
+  font-size: var(--font-size-12, 12px);
+}

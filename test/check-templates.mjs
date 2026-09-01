@@ -21,6 +21,7 @@ Handlebars.registerHelper('localize', (key, options) => {
   return key;
 });
 Handlebars.registerHelper('mccEq', (a, b) => a === b);
+Handlebars.registerHelper('mccConcat', (...args) => args.slice(0, -1).join(''));
 
 const partialNames = {
   'import-tab.hbs': 'mccImportTab',
@@ -105,8 +106,32 @@ const context = {
     abilities: [{ key: 'str', label: 'STR', options: tierRow.options, value: 5 }],
     strikes: [{ index: 0, name: 'Jaws', isRanged: false, damageTypes: [{ value: 'piercing', selected: true }] }],
     skills: [{ index: 0, options: [{ value: 'athletics', selected: true }], tiers: tierRow.options }],
+    drops: {
+      spells: [{ index: 0, bucket: 'spells', name: 'Fireball', img: 'x.webp' }],
+      specials: [],
+      gear: [],
+    },
   },
   builderSpec: specContext,
+  concept: {
+    brief: 'an evil necromancer',
+    partyLevel: 5,
+    partySize: 4,
+    busy: false,
+    roles: [{ value: 'boss', label: 'Boss', selected: true, level: 7 }],
+    suggestedLevel: 7,
+    xp: 80,
+    threat: 'moderate',
+    moderateBudget: 80,
+    fitModerate: 1,
+    corrections: ['ac: extreme → high'],
+  },
+  rules: {
+    errors: ['AC cannot be terrible'],
+    warnings: ['Two extreme statistics'],
+    score: 2,
+    band: '0..4',
+  },
 };
 
 const shell = Handlebars.compile(readFileSync(path.join(templates, 'creator-view.hbs'), 'utf8'));
@@ -118,6 +143,18 @@ check('import tab renders its preview', importHtml.includes('Preview Beast'), tr
 check('spell entries render in the preview', importHtml.includes('translocate (at will)'), true);
 check('items render in the preview', importHtml.includes('chain mail, longsword'), true);
 check('builder exposes a gear field', builderHtml.includes('data-bind="builder.gear"'), true);
+check('builder offers the concept panel', builderHtml.includes('data-action="concept"'), true);
+check('the encounter budget is shown before creating', builderHtml.includes('MCC.Concept.BudgetLine'), true);
+check('rule errors and warnings surface', [
+  builderHtml.includes('AC cannot be terrible'), builderHtml.includes('Two extreme statistics'),
+], [true, true]);
+// A drop zone must contain its own invitation, or it collapses to a strip
+// nobody can hit.
+const zoneMatch = builderHtml.match(/<div class="mcc-drop-zone"[^>]*>([\s\S]*?)<\/div>/);
+check('every drop zone carries its bucket', (builderHtml.match(/data-bucket="/g) ?? []).length >= 3, true);
+check('the invitation sits inside the zone', zoneMatch?.[1].includes('MCC.Drop.Invite'), true);
+check('dropped entries render with a remove button',
+  builderHtml.includes('data-action="removeDrop"') && builderHtml.includes('Fireball'), true);
 check('import tab shows the missing-field warning', importHtml.includes('MCC.Import.MissingField'), true);
 check('builder tab renders rows', builderHtml.includes('builder.strike.0.name'), true);
 check('builder remove buttons carry their index',
@@ -137,7 +174,7 @@ const binds = new Set([...importHtml.matchAll(/data-bind="([\w.]+)"/g),
   ...builderHtml.matchAll(/data-bind="([\w.]+)"/g)].map((m) => m[1]));
 for (const bind of binds) {
   const [scope] = bind.split('.');
-  check(`bind ${bind} uses a routed scope`, ['import', 'builder'].includes(scope), true);
+  check(`bind ${bind} uses a routed scope`, ['import', 'builder', 'concept'].includes(scope), true);
 }
 check('binds cover both tabs', binds.size >= 10, true);
 

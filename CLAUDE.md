@@ -33,6 +33,19 @@ apply here too.
   list itself comes from the system's own
   `packs/pf2e/journals/remaster-changes.json`, not the wiki page, which is a
   stale copy with swapped dimensional anchor/lock rows.
+- **The concept schema must stay numberless.** `ai/concept.js` lets the model
+  pick tiers, never values, and the creature's level comes from
+  `encounter.js`, not the model. Adding a numeric field there would break the
+  module's central promise; `check-builder.mjs` feeds it an over-tuned
+  concept and asserts what comes back is inside the rules.
+- **`enforceDraft` is the only way into the builder.** Anything that produces
+  a draft (concept mapping, a future importer, a macro) runs through it, so
+  an out-of-vocabulary tier can never reach the tables.
+- **ApplicationV2 has no drag-drop support.** Listeners are wired by hand in
+  `_onRender`, once, on the frame; `dragenter`/`dragleave` fire for child
+  elements, so the zone counts nesting depth rather than toggling on every
+  crossing. A drop zone must contain its own invitation text and keep a
+  `min-height`, or it collapses to a strip nobody can hit.
 - **The OpenAI key stays client-scoped.** World settings are readable by every
   player regardless of `restricted`.
 - **pf2e schemas were verified against the system source** (v7.12/v8.4):
@@ -55,6 +68,10 @@ apply here too.
 | Spell entries + compendium resolution | `scripts/spells.js`, `scripts/spellnames.js` |
 | Gear extraction + compendium resolution | `scripts/equipment.js` |
 | Source-game-only mechanics (Legendary Resistance, advantage, recharge) | `scripts/mechanics5e.js` |
+| Encounter budgets, roles → creature level | `scripts/encounter.js` |
+| Creature-building guardrails (hard rules + budget) | `scripts/creature-rules.js` |
+| Drag-and-drop bookkeeping | `scripts/drops.js` |
+| AI concept → builder draft | `scripts/ai/concept.js` |
 | OpenAI text/image calls | `scripts/ai/` |
 | The window (both tabs, `data-bind` state) | `scripts/apps/creator-view.js` |
 

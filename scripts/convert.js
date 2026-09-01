@@ -266,6 +266,9 @@ export function convertAbilityText(text, { level, spellTier }) {
   );
   result = result.replace(/spell save DC\s*\d+/gi, `spell DC ${dc}`);
   result = result.replace(/\bDC\s*\d+\b/g, `DC ${dc}`);
+  // A concept ability is written with a bare "DC" precisely so the module
+  // fills it in; without this the sheet would say "DC Fortitude save".
+  result = result.replace(/\bDC\b(?!\s*\d)/g, `DC ${dc}`);
   result = result.replace(
     /[+-]\d+\s+to hit with spell attacks/gi,
     `spell attack +${attack}`,
@@ -364,7 +367,7 @@ export function convertCreature(data, { level: levelOverride, tiers: tierOverrid
     spellcasting,
     // Descriptive only: the tables above already account for the creature's
     // gear, so nothing here feeds back into AC, attack or damage.
-    equipment: gearFromParsed(data),
+    equipment: gearFromParsed(data).map((name) => ({ name, uuid: null })),
     specials: built.specials,
     // One set: "Damage Immunities poison" and "Condition Immunities poisoned"
     // both map to the poison slug and must not list it twice.
@@ -645,6 +648,46 @@ function buildProvenance(data, tiers, level) {
 
 // --- Builder tab -------------------------------------------------------------
 
+/**
+ * One innate entry for a built creature: concept spells and dropped spells
+ * land together, dropped ones carrying the uuid of the document to clone.
+ * Everything mechanical - DC, attack, ranks - still comes from the tables.
+ */
+function builderSpellcasting(draft, level, drops) {
+  const spells = [
+    ...(draft.conceptSpells ?? []).map((spell) => ({ ...spell, uuid: null })),
+    ...drops.spells.map((spell) => ({
+      name: spell.name.toLowerCase(),
+      uuid: spell.uuid,
+      uses: spell.uses ?? null,
+      atWill: Boolean(spell.atWill),
+      constant: Boolean(spell.constant),
+    })),
+  ];
+  if (spells.length === 0 || !draft.spell) return null;
+
+  const seen = new Set();
+  const unique = spells.filter((spell) => {
+    const key = spell.uuid ?? spell.name;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  return {
+    entries: [{
+      name: 'Innate Spellcasting',
+      category: 'innate',
+      tradition: draft.tradition ?? 'arcane',
+      ability: 'cha',
+      dc: spellDCFor(level, draft.spell),
+      attack: spellAttackFor(level, draft.spell),
+      slots: {},
+      spells: unique,
+    }],
+  };
+}
+
 /** Seed a builder draft from a road map. */
 export function seedFromRoadMap(roadMapKey, level) {
   const map = ROAD_MAPS[roadMapKey] ?? ROAD_MAPS.balanced;
@@ -674,18 +717,20 @@ export function specFromBuilder(draft) {
   for (const [key, tier] of Object.entries(draft.abilities)) {
     abilities[key] = abilityFor(level, tier);
   }
+  const drops = draft.drops ?? { spells: [], specials: [], gear: [], strikes: [] };
+  const languages = mapLanguages(draft.languages ?? []);
   return {
     name: draft.name?.trim() || 'New Creature',
     level,
     size: draft.size ?? 'med',
     traits: (draft.traits ?? []).filter(Boolean),
     rarity: draft.rarity ?? 'common',
-    languages: [],
-    languageDetails: '',
+    languages: languages.value,
+    languageDetails: languages.details,
     description: draft.description ?? '',
     sourceNote: `Built with the ${draft.roadMap} road map at level ${level}.`,
     perception: { tier: draft.perception, mod: perceptionFor(level, draft.perception) },
-    senses: [],
+    senses: draft.senses ?? [],
     abilities,
     ac: { tier: draft.ac, value: acFor(level, draft.ac) },
     saves: {
@@ -717,16 +762,27 @@ export function specFromBuilder(draft) {
     spell: draft.spell
       ? { tier: draft.spell, dc: spellDCFor(level, draft.spell), attack: spellAttackFor(level, draft.spell) }
       : null,
-    spellcasting: null,
+    spellcasting: builderSpellcasting(draft, level, drops),
     // A builder strike named for a real weapon puts that weapon in the
     // creature's hands, same rule as the importer: descriptive, never
-    // feeding back into the numbers.
-    equipment: gearFromParsed({
-      acNote: '',
-      gearLine: draft.gear ?? '',
-      attacks: (draft.strikes ?? []).map((s) => ({ name: s.name ?? '' })),
-    }),
-    specials: [],
+    // feeding back into the numbers. Dropped gear keeps its uuid so creation
+    // clones the exact item the GM dragged in.
+    equipment: [
+      ...gearFromParsed({
+        acNote: '',
+        gearLine: draft.gear ?? '',
+        attacks: (draft.strikes ?? []).map((s) => ({ name: s.name ?? '' })),
+      }).map((name) => ({ name, uuid: null })),
+      ...drops.gear.map((item) => ({ name: item.name, uuid: item.uuid })),
+    ],
+    specials: [
+      // Concept abilities get the same DC anchoring imported ones do.
+      ...(draft.conceptSpecials ?? []).map((special) => ({
+        ...special,
+        description: convertAbilityText(special.description, { level, spellTier: draft.spell }),
+      })),
+      ...drops.specials.map((special) => ({ ...special })),
+    ],
     immunities: [],
     resistances: [],
     weaknesses: [],

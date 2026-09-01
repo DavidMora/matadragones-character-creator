@@ -61,7 +61,12 @@ check('claws and bites produce no inventory', equip.gearFromParsed(reaver), []);
 
 // --- The spec carries it, and nothing else moved -----------------------------
 const armouredSpec = convertCreature(armoured);
-check('spec exposes equipment', armouredSpec.equipment, ['chain mail', 'steel shield', 'longsword', 'javelin']);
+check('spec exposes equipment as name/uuid pairs', armouredSpec.equipment, [
+  { name: 'chain mail', uuid: null },
+  { name: 'steel shield', uuid: null },
+  { name: 'longsword', uuid: null },
+  { name: 'javelin', uuid: null },
+]);
 
 // The Building Creatures promise: gear is descriptive. Strip it and every
 // number must be identical.
@@ -105,6 +110,19 @@ check('compendium id dropped', actor.items.every((i) => i._id.startsWith('item')
 const partial = fakeActor();
 const partialResult = await equip.attachGear(partial, { equipment: ['longsword', 'moon-forged glaive'] }, { findGear: fakeCompendium });
 check('unmatched gear reported, not invented', partialResult, { created: 1, missing: ['moon-forged glaive'] });
+
+// A dropped item is cloned from its own document, not looked up by name.
+const dropped = fakeActor();
+const droppedResult = await equip.attachGear(
+  dropped,
+  { equipment: [{ name: 'longsword', uuid: 'Compendium.pf2e.equipment-srd.Item.abc' }] },
+  {
+    findGear: () => { throw new Error('name lookup should not happen for a dropped item'); },
+    resolveUuid: async () => ({ _id: 'src', name: 'Ancestral Longsword', type: 'weapon', system: { quantity: 9, equipped: {} } }),
+  },
+);
+check('dropped gear resolved by uuid', [droppedResult.created, dropped.items[0].name], [1, 'Ancestral Longsword']);
+check('dropped gear still normalised', dropped.items[0].system.quantity, 1);
 
 const empty = fakeActor();
 check('a gearless creature makes no calls',

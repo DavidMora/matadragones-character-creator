@@ -211,6 +211,64 @@
       "NotAnImage": "Ese archivo no es una imagen.",
       "NoImageReturned": "La API no devolvió datos de imagen.",
       "UploadFailed": "Falló el guardado de la imagen generada en el directorio de datos del mundo."
+    },
+    "Concept": {
+      "Heading": "Describe la criatura",
+      "Tooltip": "Dilo en una frase. El modelo elige el concepto y la fuerza relativa de cada estadística; todos los números siguen saliendo de las tablas de Creación de criaturas, y el nivel sale del nivel del grupo y el rol de abajo, por el presupuesto de encuentros publicado.",
+      "Brief": "Descripción",
+      "BriefPlaceholder": "un nigromante malvado que levanta a los caídos en pleno combate",
+      "BriefRequired": "Describe primero la criatura que quieres.",
+      "PartyLevel": "Nivel del grupo",
+      "PartySize": "Tamaño del grupo",
+      "Role": "Papel en el combate",
+      "LevelShort": "niv",
+      "Submit": "Diseñar criatura",
+      "Ready": "Concepto listo: {name} (nivel {level}). Revísalo y ajústalo antes de crear.",
+      "Corrected": "{count} valor(es) quedaban fuera de las reglas de creación y se corrigieron.",
+      "BudgetLine": "Vale {xp} PX para este grupo: {threat} en solitario; caben unas {count} en un encuentro moderado ({budget} PX).",
+      "BudgetTooltip": "De las tablas publicadas de creación de encuentros: una criatura cuesta PX según su nivel relativo al del grupo, y un grupo de N tiene un presupuesto moderado de 20xN PX."
+    },
+    "Role": {
+      "Solo": "Jefe en solitario (grupo +3)",
+      "Boss": "Jefe (grupo +2)",
+      "Elite": "Élite (grupo +1)",
+      "Matched": "Igualada (nivel del grupo)",
+      "Lackey": "Secuaz (grupo -2)",
+      "Minion": "Esbirro (grupo -4)"
+    },
+    "Threat": {
+      "trivial": "trivial",
+      "low": "bajo",
+      "moderate": "moderado",
+      "severe": "severo",
+      "extreme": "extremo"
+    },
+    "Drop": {
+      "Heading": "Arrastra conjuros, habilidades y equipo",
+      "Tooltip": "Arrastra cualquier objeto desde un compendio o la barra lateral a una caja de abajo. Los documentos soltados se clonan tal cual en la criatura, así que sus elementos de reglas siguen funcionando.",
+      "Invite": "Suelta objetos aquí",
+      "Remove": "Quitar",
+      "Added": "Añadido {name}.",
+      "Duplicate": "{name} ya está en esta criatura.",
+      "Unresolved": "No se pudo leer ese objeto.",
+      "WrongType": "Un objeto de tipo {type} no se puede añadir así a una criatura.",
+      "Bucket": {
+        "spells": "Conjuros",
+        "specials": "Habilidades y dotes",
+        "gear": "Equipo"
+      }
+    },
+    "Rules": {
+      "BadTier": "{stat} no puede ser {tier}; la tabla ofrece {allowed}.",
+      "BadLevel": "El nivel {level} está fuera de las tablas (-1 a 24).",
+      "TooManyExtremes": "{count} estadísticas extremas: lo extremo es el sello de una criatura, y más de dos queda fuera de las reglas.",
+      "TwoExtremes": "Dos estadísticas extremas: resérvalas para aquello por lo que la criatura es famosa.",
+      "OverBudget": "Puntuación de poder {score}, por encima de todos los arquetipos publicados (máx. {max}). Paga una fortaleza con una estadística baja.",
+      "UnderBudget": "Puntuación de poder {score}, por debajo de todos los arquetipos publicados (mín. {min}). Puede ser un paseo para su nivel.",
+      "NoWeakness": "CA, PG, ataque y daño fuertes a la vez no dejan ángulo a los jugadores; los arquetipos siempre ceden algo.",
+      "Corrected": "{key}: {from} → {to}",
+      "Score": "Puntuación de poder {score} (arquetipos publicados: {band})",
+      "ScoreTooltip": "Suma de puntos de rango entre las estadísticas: extremo +2, alto +1, moderado 0, bajo -1, terrible -2. La banda se mide de los arquetipos publicados, así que todo lo que avala el libro pasa."
     }
   }
 }
