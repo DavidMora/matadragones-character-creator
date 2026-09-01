@@ -26,6 +26,25 @@ import { readDropData, describeDropped, droppedToSpecial, addDrop } from '../dro
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
+/** How often an innate spell can be cast, as the sheet expresses it. */
+const FREQUENCIES = [
+  { value: 'at-will', label: 'MCC.Frequency.AtWill' },
+  { value: 'constant', label: 'MCC.Frequency.Constant' },
+  { value: '1', label: 'MCC.Frequency.Once' },
+  { value: '2', label: 'MCC.Frequency.Twice' },
+  { value: '3', label: 'MCC.Frequency.Thrice' },
+];
+
+const frequencyOf = (spell) => (spell.constant ? 'constant'
+  : spell.atWill ? 'at-will'
+    : spell.uses ? String(spell.uses) : 'at-will');
+
+const frequencyToUses = (value) => ({
+  atWill: value === 'at-will',
+  constant: value === 'constant',
+  uses: /^\d+$/.test(value) ? Number(value) : null,
+});
+
 /**
  * The one window. Two tabs share a preview: Import turns a pasted 5e stat
  * block into a spec, Builder assembles one from a road map. Both create the
@@ -58,10 +77,10 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
       ...seedFromRoadMap('balanced', 3),
       name: '', size: 'med', rarity: 'common', traits: [], speed: 25,
       description: '', gear: '', tradition: null,
-      senses: [], languages: [], conceptSpells: [], conceptSpecials: [],
+      senses: [], languages: [],
       strikes: [{ name: 'Fist', kind: 'melee', damageType: 'bludgeoning' }],
       skills: [],
-      drops: { spells: [], specials: [], gear: [], strikes: [] },
+      contents: { spells: [], specials: [], gear: [] },
     };
   }
 
@@ -87,6 +106,7 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
       removeSkill: CreatorView.#onRemoveSkill,
       concept: CreatorView.#onConcept,
       removeDrop: CreatorView.#onRemoveDrop,
+      addGear: CreatorView.#onAddGear,
       cancel: CreatorView.#onCancel,
     },
   };
@@ -150,12 +170,11 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
 
     // Builder tab
     const draft = this.#builder;
-    const builderSpec = specFromBuilder(this.#draftForSpec());
+    const builderSpec = specFromBuilder(draft);
     context.builder = {
       name: draft.name,
       level: levelOptions(draft.level),
       speed: draft.speed,
-      gear: draft.gear,
       description: draft.description,
       traits: (draft.traits ?? []).join(', '),
       roadMaps: Object.entries(ROAD_MAPS).map(([value, map]) => ({
@@ -197,9 +216,25 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
         options: PF2E_SKILLS.map((value) => ({ value, selected: value === skill.slug })),
         tiers: tierOptions(skill.tier, ['extreme', 'high', 'moderate', 'low']),
       })),
-      drops: Object.fromEntries(['spells', 'specials', 'gear'].map((bucket) => [bucket,
-        draft.drops[bucket].map((entry, index) => ({ ...entry, index, bucket })),
-      ])),
+      contents: {
+        spells: draft.contents.spells.map((entry, index) => ({
+          ...entry,
+          index,
+          bucket: 'spells',
+          frequencies: FREQUENCIES.map((f) => ({
+            value: f.value,
+            label: game.i18n.localize(f.label),
+            selected: f.value === frequencyOf(entry),
+          })),
+        })),
+        specials: draft.contents.specials.map((entry, index) => ({
+          ...entry, index, bucket: 'specials',
+        })),
+        gear: draft.contents.gear.map((entry, index) => ({
+          ...entry, index, bucket: 'gear',
+        })),
+      },
+      spellCount: draft.contents.spells.length,
     };
 
     // The AI concept panel, and the encounter maths behind the level it uses.
@@ -389,8 +424,8 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     if (entry.bucket === 'specials') {
-      const special = droppedToSpecial(entry, item);
-      Object.assign(entry, { actionType: special.actionType, special });
+      // Store the special itself, so the list row and the spec agree.
+      Object.assign(entry, droppedToSpecial(entry, item), { bucket: 'specials', img: entry.img });
     }
     if (entry.bucket === 'spells' && !this.#builder.spell) {
       // A creature holding spells needs a spell DC tier to read them from.
@@ -528,7 +563,7 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   static async #onCreateBuilder() {
-    const spec = specFromBuilder(this.#draftForSpec());
+    const spec = specFromBuilder(this.#builder);
     if (!this.#builder.name?.trim()) {
       ui.notifications.warn(game.i18n.localize('MCC.Builder.NameRequired'));
       return;
@@ -582,7 +617,17 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
 
       const { draft, corrections } = conceptToDraft(concept, level);
       // Anything the GM already dragged in survives the concept landing.
-      this.#builder = { ...draft, drops: this.#builder.drops };
+      // Anything already dragged in survives the concept landing, merged
+      // into the lists it proposes.
+      const kept = this.#builder.contents;
+      this.#builder = {
+        ...draft,
+        contents: {
+          spells: [...draft.contents.spells, ...kept.spells],
+          specials: [...draft.contents.specials, ...kept.specials],
+          gear: [...draft.contents.gear, ...kept.gear],
+        },
+      };
       this.#corrections = corrections;
       this.#tab = 'builder';
       if (corrections.length) {
@@ -590,7 +635,7 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
           game.i18n.format('MCC.Concept.Corrected', { count: corrections.length }),
         );
       }
-      if (draft.spell && !draft.conceptSpells.length) {
+      if (draft.spell && !draft.contents.spells.length) {
         ui.notifications.warn(game.i18n.localize('MCC.Concept.NoSpells'));
       }
       ui.notifications.info(game.i18n.format('MCC.Concept.Ready', { name: draft.name, level }));
@@ -599,24 +644,22 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
 
   static #onRemoveDrop(_event, target) {
     const { bucket, index } = target.dataset;
-    this.#builder.drops[bucket]?.splice(Number(index), 1);
+    this.#builder.contents[bucket]?.splice(Number(index), 1);
     this.render();
   }
 
-  /** The draft as the spec builder wants it: dropped specials flattened. */
-  #draftForSpec() {
-    const draft = this.#builder;
-    return {
-      ...draft,
-      drops: {
-        ...draft.drops,
-        specials: draft.drops.specials.map((entry) => entry.special ?? {
-          name: entry.name, uuid: entry.uuid, section: 'trait',
-          actionType: entry.actionType ?? 'passive', actions: null,
-          category: null, description: '',
-        }),
-      },
-    };
+  /** Type a name to add gear without hunting for it in a compendium. */
+  static #onAddGear() {
+    const field = this.element?.querySelector('[data-bind="builder.gearEntry"]');
+    const names = String(field?.value ?? '').split(',').map((n) => n.trim()).filter(Boolean);
+    if (names.length === 0) return;
+    for (const name of names) {
+      const clean = name.toLowerCase();
+      if (this.#builder.contents.gear.some((item) => item.name === clean)) continue;
+      this.#builder.contents.gear.push({ bucket: 'gear', uuid: null, name: clean });
+    }
+    if (field) field.value = '';
+    this.render();
   }
 
   static #onCancel() {

@@ -653,17 +653,14 @@ function buildProvenance(data, tiers, level) {
  * land together, dropped ones carrying the uuid of the document to clone.
  * Everything mechanical - DC, attack, ranks - still comes from the tables.
  */
-function builderSpellcasting(draft, level, drops) {
-  const spells = [
-    ...(draft.conceptSpells ?? []).map((spell) => ({ ...spell, uuid: null })),
-    ...drops.spells.map((spell) => ({
-      name: spell.name.toLowerCase(),
-      uuid: spell.uuid,
-      uses: spell.uses ?? null,
-      atWill: Boolean(spell.atWill),
-      constant: Boolean(spell.constant),
-    })),
-  ];
+function builderSpellcasting(draft, level, contents) {
+  const spells = contents.spells.map((spell) => ({
+    name: spell.name.toLowerCase(),
+    uuid: spell.uuid ?? null,
+    uses: spell.uses ?? null,
+    atWill: Boolean(spell.atWill),
+    constant: Boolean(spell.constant),
+  }));
   if (spells.length === 0 || !draft.spell) return null;
 
   const seen = new Set();
@@ -724,7 +721,10 @@ export function specFromBuilder(draft) {
   for (const [key, tier] of Object.entries(draft.abilities)) {
     abilities[key] = abilityFor(level, tier);
   }
-  const drops = draft.drops ?? { spells: [], specials: [], gear: [], strikes: [] };
+  // One editable set of lists, whoever filled it: the AI concept, a drag and
+  // drop, or the GM editing rows by hand. The builder panel renders exactly
+  // this, so what is on screen is what gets created.
+  const contents = draft.contents ?? { spells: [], specials: [], gear: [] };
   const languages = mapLanguages(draft.languages ?? []);
   return {
     name: draft.name?.trim() || 'New Creature',
@@ -769,27 +769,29 @@ export function specFromBuilder(draft) {
     spell: draft.spell
       ? { tier: draft.spell, dc: spellDCFor(level, draft.spell), attack: spellAttackFor(level, draft.spell) }
       : null,
-    spellcasting: builderSpellcasting(draft, level, drops),
+    spellcasting: builderSpellcasting(draft, level, contents),
     // A builder strike named for a real weapon puts that weapon in the
     // creature's hands, same rule as the importer: descriptive, never
     // feeding back into the numbers. Dropped gear keeps its uuid so creation
     // clones the exact item the GM dragged in.
     equipment: [
+      // A strike named for a real weapon still puts that weapon in the
+      // creature's hands, on top of whatever is listed.
       ...gearFromParsed({
         acNote: '',
-        gearLine: draft.gear ?? '',
+        gearLine: '',
         attacks: (draft.strikes ?? []).map((s) => ({ name: s.name ?? '' })),
       }).map((name) => ({ name, uuid: null })),
-      ...drops.gear.map((item) => ({ name: item.name, uuid: item.uuid })),
+      ...contents.gear.map((item) => ({ name: item.name, uuid: item.uuid ?? null })),
     ],
-    specials: [
-      // Concept abilities get the same DC anchoring imported ones do.
-      ...(draft.conceptSpecials ?? []).map((special) => ({
+    specials: contents.specials.map((special) => (
+      // A dropped document is cloned as it is; written text gets the same DC
+      // anchoring imported abilities get.
+      special.uuid ? { ...special } : {
         ...special,
-        description: convertAbilityText(special.description, { level, spellTier: draft.spell }),
-      })),
-      ...drops.specials.map((special) => ({ ...special })),
-    ],
+        description: convertAbilityText(special.description ?? '', { level, spellTier: draft.spell }),
+      }
+    )),
     immunities: [],
     resistances: [],
     weaknesses: [],

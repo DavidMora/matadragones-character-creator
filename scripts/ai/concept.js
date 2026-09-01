@@ -146,6 +146,14 @@ const CONCEPT_SCHEMA = {
         + 'spells here. Never put spells in specials. Ranks, slots and DCs are computed from the '
         + 'creature\'s level, so do not state them.',
     },
+    gear: {
+      type: 'array',
+      items: { type: 'string' },
+      description:
+        'Ordinary Pathfinder equipment the creature carries, by name (a staff, chain mail, '
+        + 'a shield). Empty for a creature that carries nothing. Gear is descriptive: the '
+        + 'statistics already account for it.',
+    },
     specials: {
       type: 'array',
       items: {
@@ -267,29 +275,40 @@ export function conceptToDraft(concept, level) {
     languages: (concept.languages ?? []).map((l) => String(l).toLowerCase().trim()).filter(Boolean),
     tradition: concept.spellcasting?.tradition ?? null,
     castingCategory: concept.spellcasting?.category ?? 'innate',
-    gear: '',
-    drops: { spells: [], specials: [], gear: [], strikes: [] },
-    conceptSpells: (concept.spellcasting?.spells ?? []).map((spell) => ({
-      // Remastered here too: the model is told to use remaster names, and
-      // this makes it true regardless of what it actually wrote.
-      name: modernizeSpellNames(String(spell.name).toLowerCase().trim()),
-      uses: FREQUENCY_USES[spell.frequency] ?? null,
-      atWill: spell.frequency === 'at-will',
-      constant: spell.frequency === 'constant',
-    })),
-    conceptSpecials: (concept.specials ?? []).map((special) => ({
-      name: special.name,
-      section: 'trait',
-      actionType: special.actionType,
-      actions: special.actionType === 'action' ? 1 : null,
-      category: special.actionType === 'passive' ? 'defensive' : 'offensive',
-      description: special.description,
-    })),
+    // The concept lands in the same editable lists a drag and drop fills, so
+    // the GM sees and can tune every spell, ability and item it proposed.
+    contents: {
+      spells: (concept.spellcasting?.spells ?? []).map((spell) => ({
+        bucket: 'spells',
+        uuid: null,
+        // Remastered here too: the model is told to use remaster names, and
+        // this makes it true regardless of what it actually wrote.
+        name: modernizeSpellNames(String(spell.name).toLowerCase().trim()),
+        uses: FREQUENCY_USES[spell.frequency] ?? null,
+        atWill: spell.frequency === 'at-will',
+        constant: spell.frequency === 'constant',
+      })),
+      specials: (concept.specials ?? []).map((special) => ({
+        bucket: 'specials',
+        uuid: null,
+        name: special.name,
+        section: 'trait',
+        actionType: special.actionType,
+        actions: special.actionType === 'action' ? 1 : null,
+        category: special.actionType === 'passive' ? 'defensive' : 'offensive',
+        description: special.description,
+      })),
+      gear: (concept.gear ?? []).map((name) => ({
+        bucket: 'gear',
+        uuid: null,
+        name: String(name).toLowerCase().trim(),
+      })).filter((item) => item.name),
+    },
   };
 
   // A caster with no spell tier, or a spell tier with no tradition, is a
   // half-built creature either way; reconcile before the rules run.
-  if (raw.conceptSpells.length && !raw.spell) raw.spell = 'moderate';
+  if (raw.contents.spells.length && !raw.spell) raw.spell = 'moderate';
   if (raw.spell && !raw.tradition) raw.tradition = 'arcane';
 
   const { draft, corrections } = enforceDraft(raw);

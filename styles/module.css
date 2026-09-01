@@ -370,3 +370,25 @@
   color: var(--color-level-error, #b60205);
   font-size: var(--font-size-12, 12px);
 }
+
+/* Rows in the shared lists carry their own controls, so they need room. */
+.mcc-drop-list select {
+  width: auto;
+  flex: 0 0 auto;
+  font-size: var(--font-size-11, 11px);
+  height: 1.4rem;
+  padding: 0 0.15rem;
+}
+
+.mcc-gear-add {
+  margin: 0.35rem 0 0;
+  gap: 0.25rem;
+}
+
+.mcc-gear-add input { flex: 1; min-width: 4rem; }
+
+.mcc-gear-add button {
+  width: auto;
+  flex: 0 0 auto;
+  line-height: 1.4;
+}

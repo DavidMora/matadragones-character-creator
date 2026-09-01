@@ -77,14 +77,18 @@ Budget warnings flag a creature with more than two extreme statistics, or one
 whose power score falls outside the range the published road maps occupy -
 a band measured from those road maps, so anything the book endorses passes.
 
-## Dragging in spells, abilities and gear
+## Spells, abilities and gear
 
-Drag any item from a compendium or the sidebar into the builder's drop zones.
-Spells join the creature's innate entry, actions and feats become abilities,
-weapons and armour land in the inventory - and each is cloned from the exact
-document you dropped, so its rules elements keep working. Dropped NPC attacks
-contribute their name and are re-statted from the tables like any other
-Strike.
+The builder keeps one editable list of each. Whatever the AI proposes lands
+there as rows you can tune - change a spell's frequency, drop an ability you
+do not want - alongside anything you drag in from a compendium or the
+sidebar, and gear you simply type by name. What the panel shows is what gets
+created.
+
+Dropped documents are cloned exactly as they are, so their rules elements
+keep working; names typed or proposed by the model are matched against the
+compendium when the actor is created. Dropped NPC attacks contribute their
+name and are re-statted from the tables like any other Strike.
 
 ## Gear
 

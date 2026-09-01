@@ -106,10 +106,14 @@ const context = {
     abilities: [{ key: 'str', label: 'STR', options: tierRow.options, value: 5 }],
     strikes: [{ index: 0, name: 'Jaws', isRanged: false, damageTypes: [{ value: 'piercing', selected: true }] }],
     skills: [{ index: 0, options: [{ value: 'athletics', selected: true }], tiers: tierRow.options }],
-    drops: {
-      spells: [{ index: 0, bucket: 'spells', name: 'Fireball', img: 'x.webp' }],
-      specials: [],
-      gear: [],
+    spellCount: 1,
+    contents: {
+      spells: [{
+        index: 0, bucket: 'spells', name: 'Fireball', img: 'x.webp',
+        frequencies: [{ value: '3', label: '3/day', selected: true }],
+      }],
+      specials: [{ index: 0, bucket: 'specials', name: 'Raise the Fallen', actionType: 'action' }],
+      gear: [{ index: 0, bucket: 'gear', name: 'bone staff' }],
     },
   },
   builderSpec: specContext,
@@ -142,7 +146,8 @@ const builderHtml = shell({ ...context, isImport: false, isBuilder: true });
 check('import tab renders its preview', importHtml.includes('Preview Beast'), true);
 check('spell entries render in the preview', importHtml.includes('translocate (at will)'), true);
 check('items render in the preview', importHtml.includes('chain mail, longsword'), true);
-check('builder exposes a gear field', builderHtml.includes('data-bind="builder.gear"'), true);
+check('gear can be added by name without a compendium hunt',
+  builderHtml.includes('data-action="addGear"'), true);
 check('builder offers the concept panel', builderHtml.includes('data-action="concept"'), true);
 check('the encounter budget is shown before creating', builderHtml.includes('MCC.Concept.BudgetLine'), true);
 check('rule errors and warnings surface', [
@@ -153,8 +158,14 @@ check('rule errors and warnings surface', [
 const zoneMatch = builderHtml.match(/<div class="mcc-drop-zone"[^>]*>([\s\S]*?)<\/div>/);
 check('every drop zone carries its bucket', (builderHtml.match(/data-bucket="/g) ?? []).length >= 3, true);
 check('the invitation sits inside the zone', zoneMatch?.[1].includes('MCC.Drop.Invite'), true);
-check('dropped entries render with a remove button',
+check('list rows render with a remove button',
   builderHtml.includes('data-action="removeDrop"') && builderHtml.includes('Fireball'), true);
+// The left panel must show what the AI proposed, not just what was dragged:
+// spells, abilities and gear all appear as editable rows.
+check('proposed abilities and gear are on the panel too',
+  builderHtml.includes('Raise the Fallen') && builderHtml.includes('bone staff'), true);
+check('each spell row can have its frequency tuned',
+  builderHtml.includes('data-bind="builder.spellFreq.0"'), true);
 check('import tab shows the missing-field warning', importHtml.includes('MCC.Import.MissingField'), true);
 check('builder tab renders rows', builderHtml.includes('builder.strike.0.name'), true);
 check('builder remove buttons carry their index',

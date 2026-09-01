@@ -122,22 +122,24 @@ check('a dropped action keeps its cost and text',
   [special.actionType, special.description, special.uuid],
   ['free', '<p>Grabs.</p>', 'Compendium.pf2e.actionspf2e.Item.def']);
 
-const draft = { drops: { spells: [], specials: [], gear: [], strikes: [] } };
+const draft = { contents: { spells: [], specials: [], gear: [] } };
 check('a drop is added', drops.addDrop(draft, drops.describeDropped(spellItem)), true);
 check('the same item twice is refused', drops.addDrop(draft, drops.describeDropped(spellItem)), false);
-check('one entry stored', draft.drops.spells.length, 1);
+check('one entry stored', draft.contents.spells.length, 1);
 
 // --- Dropped items reach the spec --------------------------------------------
 const built = {
   ...seedFromRoadMap('spellcaster', 6),
   name: 'Dropper', size: 'med', rarity: 'common', traits: [], speed: 25,
-  description: '', gear: 'longsword', tradition: 'occult', senses: [], languages: ['Common'],
+  description: '', tradition: 'occult', senses: [], languages: ['Common'],
   strikes: [{ name: 'Staff', kind: 'melee', damageType: 'bludgeoning' }], skills: [],
-  drops: {
+  contents: {
     spells: [drops.describeDropped(spellItem)],
     specials: [special],
-    gear: [drops.describeDropped({ type: 'weapon', uuid: 'Compendium.x.Item.axe', name: 'Battle Axe', system: {} })],
-    strikes: [],
+    gear: [
+      { bucket: 'gear', uuid: null, name: 'longsword' },
+      drops.describeDropped({ type: 'weapon', uuid: 'Compendium.x.Item.axe', name: 'Battle Axe', system: {} }),
+    ],
   },
 };
 const spec = specFromBuilder(built);
@@ -148,10 +150,11 @@ check('entry uses the chosen tradition and table DC',
   ['occult', tables.spellDCFor(6, 'high')]);
 check('dropped ability lands in specials with its uuid',
   spec.specials.map((s) => [s.name, s.uuid]), [['Grab', 'Compendium.pf2e.actionspf2e.Item.def']]);
-check('typed and dropped gear both land',
+// The weapon a Strike is named for, then everything on the gear list.
+check('strike weapon, listed gear and dropped gear all land',
   spec.equipment, [
-    { name: 'longsword', uuid: null },
     { name: 'staff', uuid: null },
+    { name: 'longsword', uuid: null },
     { name: 'Battle Axe', uuid: 'Compendium.x.Item.axe' },
   ]);
 check('builder languages map to slugs', spec.languages, ['common']);
@@ -173,6 +176,7 @@ const concept = {
   skills: [{ slug: 'occultism', tier: 'high' }, { slug: 'occultism', tier: 'low' }],
   senses: [{ type: 'darkvision', range: 60 }, { type: 'scent', range: 30 }],
   languages: ['Common', 'Necril'],
+  gear: ['Bone Staff', 'Tattered Robes'],
   spellcasting: {
     tradition: 'divine',
     category: 'prepared',
@@ -196,10 +200,22 @@ check('senses carry acuity', conceptDraft.senses, [
   { type: 'darkvision', acuity: 'precise', range: 60 },
   { type: 'scent', acuity: 'imprecise', range: 30 },
 ]);
-check('concept spells are remastered and given frequencies', conceptDraft.conceptSpells, [
-  { name: 'summon undead', uses: 2, atWill: false, constant: false },
-  { name: 'void warp', uses: null, atWill: true, constant: false },
+// The concept fills the very lists the builder panel renders, so the GM can
+// tune what the model proposed instead of taking it or leaving it.
+check('concept spells land in the editable list, remastered', conceptDraft.contents.spells, [
+  { bucket: 'spells', uuid: null, name: 'summon undead', uses: 2, atWill: false, constant: false },
+  { bucket: 'spells', uuid: null, name: 'void warp', uses: null, atWill: true, constant: false },
 ]);
+check('concept abilities land in the editable list',
+  conceptDraft.contents.specials.map((s) => [s.name, s.actionType, s.bucket]),
+  [['Raise the Fallen', 'action', 'specials']]);
+check('concept gear lands in the editable list',
+  conceptDraft.contents.gear.map((g) => g.name), ['bone staff', 'tattered robes']);
+check('a dropped item merges into the same list as concept spells', (() => {
+  const merged = { contents: structuredClone(conceptDraft.contents) };
+  drops.addDrop(merged, drops.describeDropped(spellItem));
+  return merged.contents.spells.map((s) => s.name);
+})(), ['summon undead', 'void warp', 'Fireball']);
 
 const conceptSpec = specFromBuilder(conceptDraft);
 check('concept spell DC comes from the table, not the model',
@@ -275,10 +291,13 @@ function fakeCastingActor() {
 
 const preparedSpec = specFromBuilder({
   ...conceptDraft,
-  conceptSpells: [
-    { name: 'acid grip', uses: null, atWill: false, constant: false },
-    { name: 'caustic blast', uses: null, atWill: true, constant: false },
-  ],
+  contents: {
+    ...conceptDraft.contents,
+    spells: [
+      { name: 'acid grip', uses: null, atWill: false, constant: false },
+      { name: 'caustic blast', uses: null, atWill: true, constant: false },
+    ],
+  },
 });
 const castingActor = fakeCastingActor();
 await attachSpellcasting(castingActor, preparedSpec, {

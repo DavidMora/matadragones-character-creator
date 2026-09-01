@@ -104,13 +104,6 @@
         </label>
       </div>
       <label class="mcc-field">
-        <span>{{localize 'MCC.Builder.Gear'}}</span>
-        <input type="text" data-bind="builder.gear" value="{{builder.gear}}"
-               placeholder="{{localize 'MCC.Builder.GearPlaceholder'}}" {{#if busy}}disabled{{/if}}>
-        <small>{{localize 'MCC.Builder.GearHint'}}</small>
-      </label>
-
-      <label class="mcc-field">
         <span>{{localize 'MCC.Builder.Description'}}</span>
         <textarea data-bind="builder.description" rows="2"
                   placeholder="{{localize 'MCC.Builder.DescriptionPlaceholder'}}"
@@ -208,24 +201,65 @@
         <i class="fa-solid fa-circle-info" data-tooltip="{{localize 'MCC.Drop.Tooltip'}}"></i>
       </h3>
       <div class="mcc-drop-grid">
-        {{#each builder.drops}}
-          <div class="mcc-drop-zone" data-bucket="{{@key}}">
-            <h4>{{localize (mccConcat 'MCC.Drop.Bucket.' @key)}}</h4>
-            <p class="mcc-drop-hint">{{localize 'MCC.Drop.Invite'}}</p>
-            <ul class="mcc-drop-list">
-              {{#each this}}
-                <li>
-                  {{#if img}}<img src="{{img}}" alt="">{{/if}}
-                  <span>{{name}}</span>
-                  <button type="button" data-action="removeDrop" data-bucket="{{bucket}}" data-index="{{index}}"
-                          data-tooltip="{{localize 'MCC.Drop.Remove'}}">
-                    <i class="fa-solid fa-xmark"></i>
-                  </button>
-                </li>
-              {{/each}}
-            </ul>
+
+        <div class="mcc-drop-zone" data-bucket="spells">
+          <h4>{{localize 'MCC.Drop.Bucket.spells'}} ({{builder.spellCount}})</h4>
+          <p class="mcc-drop-hint">{{localize 'MCC.Drop.Invite'}}</p>
+          <ul class="mcc-drop-list">
+            {{#each builder.contents.spells}}
+              <li>
+                {{#if img}}<img src="{{img}}" alt="">{{/if}}
+                <span>{{name}}</span>
+                <select data-bind="builder.spellFreq.{{index}}" {{#if ../busy}}disabled{{/if}}>
+                  {{#each frequencies}}
+                    <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+                  {{/each}}
+                </select>
+                <button type="button" data-action="removeDrop" data-bucket="spells" data-index="{{index}}"
+                        data-tooltip="{{localize 'MCC.Drop.Remove'}}"><i class="fa-solid fa-xmark"></i></button>
+              </li>
+            {{/each}}
+          </ul>
+        </div>
+
+        <div class="mcc-drop-zone" data-bucket="specials">
+          <h4>{{localize 'MCC.Drop.Bucket.specials'}}</h4>
+          <p class="mcc-drop-hint">{{localize 'MCC.Drop.Invite'}}</p>
+          <ul class="mcc-drop-list">
+            {{#each builder.contents.specials}}
+              <li>
+                {{#if img}}<img src="{{img}}" alt="">{{/if}}
+                <span>{{name}}</span>
+                <span class="mcc-action-type">[{{actionType}}]</span>
+                <button type="button" data-action="removeDrop" data-bucket="specials" data-index="{{index}}"
+                        data-tooltip="{{localize 'MCC.Drop.Remove'}}"><i class="fa-solid fa-xmark"></i></button>
+              </li>
+            {{/each}}
+          </ul>
+        </div>
+
+        <div class="mcc-drop-zone" data-bucket="gear">
+          <h4>{{localize 'MCC.Drop.Bucket.gear'}}</h4>
+          <p class="mcc-drop-hint">{{localize 'MCC.Drop.Invite'}}</p>
+          <ul class="mcc-drop-list">
+            {{#each builder.contents.gear}}
+              <li>
+                {{#if img}}<img src="{{img}}" alt="">{{/if}}
+                <span>{{name}}</span>
+                <button type="button" data-action="removeDrop" data-bucket="gear" data-index="{{index}}"
+                        data-tooltip="{{localize 'MCC.Drop.Remove'}}"><i class="fa-solid fa-xmark"></i></button>
+              </li>
+            {{/each}}
+          </ul>
+          <div class="mcc-row mcc-gear-add">
+            <input type="text" data-bind="builder.gearEntry"
+                   placeholder="{{localize 'MCC.Drop.GearPlaceholder'}}" {{#if busy}}disabled{{/if}}>
+            <button type="button" data-action="addGear" {{#if busy}}disabled{{/if}}>
+              <i class="fa-solid fa-plus"></i> {{localize 'MCC.Drop.AddGear'}}
+            </button>
           </div>
-        {{/each}}
+        </div>
+
       </div>
     </div>
 

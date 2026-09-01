@@ -83,6 +83,17 @@ apply here too.
 The "spec" produced by `convertCreature`/`specFromBuilder` is the one shape
 both tabs share and the only thing `actor.js` reads.
 
+## One list, many sources
+
+`draft.contents = { spells, specials, gear }` is the single editable set the
+builder panel renders. The AI concept writes into it, a drag and drop writes
+into it, and typing gear writes into it - so what the GM sees is what
+`specFromBuilder` reads. Do not add a parallel field for a new source of
+spells or items: an AI-only list that the panel could not show was exactly
+what made the concept feel disconnected. An entry with a `uuid` is cloned
+from that document at creation; one without is matched by name against the
+compendium.
+
 ## UI state
 
 `CreatorView` keeps all state on the instance; inputs carry

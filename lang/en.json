@@ -98,10 +98,7 @@
       "SkillsHeading": "Skills",
       "SkillsTooltip": "Skills with their tier; the modifier comes from the skills table for the level.",
       "AddSkill": "Add skill",
-      "RemoveSkill": "Remove this skill",
-      "Gear": "Carried gear",
-      "GearPlaceholder": "chain mail, longsword, shield",
-      "GearHint": "Listed on the sheet only; the statistics above already account for gear."
+      "RemoveSkill": "Remove this skill"
     },
     "Create": {
       "Submit": "Create actor",
@@ -247,8 +244,8 @@
       "extreme": "extreme"
     },
     "Drop": {
-      "Heading": "Drag in spells, abilities and gear",
-      "Tooltip": "Drag any item from a compendium or the sidebar into a box below. Dropped documents are cloned onto the creature exactly as they are, so their rules elements keep working.",
+      "Heading": "Spells, abilities and gear",
+      "Tooltip": "Everything the creature carries or casts, whether the AI proposed it or you dragged it in. Drag any item from a compendium or the sidebar into a box, edit the rows, or remove what you do not want. Dropped documents are cloned exactly as they are, so their rules elements keep working; names typed or proposed are matched against the compendium when the actor is created.",
       "Invite": "Drop items here",
       "Remove": "Remove",
       "Added": "Added {name}.",
@@ -259,7 +256,10 @@
         "spells": "Spells",
         "specials": "Abilities & feats",
         "gear": "Gear"
-      }
+      },
+      "AddGear": "Add",
+      "GearPlaceholder": "staff, chain mail",
+      "Empty": "Nothing yet — drop items here"
     },
     "Rules": {
       "BadTier": "{stat} cannot be {tier}; the table offers {allowed}.",
@@ -272,6 +272,13 @@
       "Corrected": "{key}: {from} → {to}",
       "Score": "Power score {score} (published road maps: {band})",
       "ScoreTooltip": "Tier points summed across the statistics: extreme +2, high +1, moderate 0, low -1, terrible -2. The band is measured from the published road maps, so anything the book endorses passes."
+    },
+    "Frequency": {
+      "AtWill": "at will",
+      "Constant": "constant",
+      "Once": "1/day",
+      "Twice": "2/day",
+      "Thrice": "3/day"
     }
   }
 }

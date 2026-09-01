@@ -96,9 +96,13 @@ export function droppedToSpecial(entry, item) {
   };
 }
 
-/** Add an entry to a draft's drop lists, ignoring exact duplicates. */
+/**
+ * Add an entry to the draft's editable lists, ignoring exact duplicates.
+ * The same lists hold what the AI proposed and what the GM dragged in, so
+ * the builder panel shows one merged, editable picture.
+ */
 export function addDrop(draft, entry) {
-  const list = draft.drops[entry.bucket];
+  const list = draft.contents[entry.bucket];
   if (!list) return false;
   if (entry.uuid && list.some((existing) => existing.uuid === entry.uuid)) return false;
   list.push(entry);
