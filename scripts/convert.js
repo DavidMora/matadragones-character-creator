@@ -11,6 +11,7 @@
  */
 import { baselineForCR, levelFromCR } from './baseline5e.js';
 import { damagePerRound } from './parse5e.js';
+import { modernizeSpellNames } from './spellnames.js';
 import {
   abilityFor,
   acFor,
@@ -192,6 +193,7 @@ function bestAttackBonus(data) {
  */
 export function convertAbilityText(text, { level, spellTier }) {
   const dc = spellDCFor(level, spellTier ?? 'moderate');
+  const attack = spellAttackFor(level, spellTier ?? 'moderate');
   let result = String(text ?? '');
   result = result.replace(
     /DC\s*\d+\s+(Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma)\s+saving throw/gi,
@@ -199,8 +201,12 @@ export function convertAbilityText(text, { level, spellTier }) {
   );
   result = result.replace(/spell save DC\s*\d+/gi, `spell DC ${dc}`);
   result = result.replace(/\bDC\s*\d+\b/g, `DC ${dc}`);
+  result = result.replace(
+    /[+-]\d+\s+to hit with spell attacks/gi,
+    `spell attack +${attack}`,
+  );
   result = result.replace(/\bsaving throw\b/gi, 'save');
-  return result;
+  return modernizeSpellNames(result);
 }
 
 const capitalise = (s) => s.charAt(0).toUpperCase() + s.slice(1);

@@ -100,6 +100,47 @@ check('wis becomes Will', rewritten.includes('Will save'), true);
 const orphan = convert.convertAbilityText('The target is grabbed (escape DC 14).', { level: 5, spellTier: 'moderate' });
 check('orphan DCs recomputed', orphan, `The target is grabbed (escape DC ${dc5}).`);
 
+// --- Remaster spell naming ---------------------------------------------------
+const { modernizeSpellNames, SPELL_RENAMES } = await load('spellnames.js');
+check('legacy names renamed, capital preserved',
+  modernizeSpellNames('It casts Magic Missile and mage armor at will.'),
+  'It casts Force barrage and mystic armor at will.');
+check('word boundaries respected',
+  modernizeSpellNames('The mage handles the blinking lights.'),
+  'The mage handles the blinking lights.');
+check('longest name wins',
+  modernizeSpellNames('vampiric exsanguination then vampiric touch'),
+  'vampiric maelstrom then vampiric feast');
+check('renaming is idempotent: no remaster name is itself renamed',
+  Object.values(SPELL_RENAMES).some((name) => name in SPELL_RENAMES), false);
+
+const spellTrait = convert.convertAbilityText(
+  'Spellcasting. Its spellcasting ability is Charisma (spell save DC 15, +7 to hit with spell attacks). '
+  + 'At will: mage hand, misty step. 3/day: dimension door, hold person.',
+  { level: 9, spellTier: 'high' },
+);
+const dc9 = tables.spellDCFor(9, 'high');
+check('spellcasting trait fully remastered', spellTrait,
+  `Spellcasting. Its spellcasting ability is Charisma (spell DC ${dc9}, spell attack +${dc9 - 8}). `
+  + 'At will: telekinetic hand, translocate. 3/day: translocate, paralyze.');
+
+// End to end: a spellcasting special on a parsed block reaches the spec with
+// remaster names and a table DC, not the printed ones.
+const casterData = parse5eStatBlock(FROST_REAVER).data;
+casterData.specials.push({
+  name: 'Spellcasting',
+  section: 'trait',
+  description: 'Spell save DC 14. At will: magic missile, true strike.',
+});
+const casterSpec = convert.convertCreature(casterData);
+const castingNote = casterSpec.specials.find((s) => s.name === 'Spellcasting');
+check('spellcasting classified high once a casting feature exists', casterSpec.spell.tier, 'high');
+check('spell list remastered in the spec',
+  castingNote.description.includes('force barrage') && castingNote.description.includes('sure strike'), true);
+check('printed spell DC replaced by the table DC',
+  castingNote.description.includes(`DC ${tables.spellDCFor(9, 'high')}`)
+  && !castingNote.description.includes('DC 14'), true);
+
 // --- Builder path ------------------------------------------------------------
 const draft = {
   ...convert.seedFromRoadMap('brute', 5),

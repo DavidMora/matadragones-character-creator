@@ -201,6 +201,9 @@ const REWRITE_SCHEMA = {
 const REWRITE_SYSTEM = [
   'You edit creature ability descriptions into Pathfinder Second Edition phrasing:',
   'basic saves, degrees of success, PF2e condition names, concise remaster style.',
+  'Use remaster spell names, never legacy or other-game ones (force barrage, not magic missile;',
+  'mystic armor, not mage armor; translocate, not dimension door); if a spell has no PF2e',
+  'equivalent you are sure of, keep its name unchanged rather than guessing.',
   'Keep every DC, damage roll, distance and duration exactly as given - you may move them, never change them.',
   'Return one entry per input ability, same names, same order. Do not add or drop abilities.',
 ].join(' ');
