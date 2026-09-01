@@ -99,8 +99,8 @@ const { GLOOM_CALLER } = await import('./fixtures.mjs');
 
 check('slugging matches pf2e convention', spellSlug("Summoner's Precaution"), 'summoners-precaution');
 
-/** A pretend compendium: knows every spell except vision of death. */
-const fakeCompendium = (name) => (name === 'vision of death' ? null : {
+/** A pretend compendium: knows every spell except phantasmal killer. */
+const fakeCompendium = (name) => (name === 'phantasmal killer' ? null : {
   _id: 'packid',
   name: name.replace(/\b\w/g, (ch) => ch.toUpperCase()),
   type: 'spell',
@@ -142,7 +142,7 @@ check('spontaneous entry has its slots', entryItems[1].system.slots, {
   slot2: { value: 3, max: 3, prepared: [] },
   slot3: { value: 2, max: 2, prepared: [] },
 });
-check('unknown spell reported, not invented', result.missing, ['vision of death']);
+check('unknown spell reported, not invented', result.missing, ['phantasmal killer']);
 check('the rest created and counted', [result.created, spellItems.length], [9, 9]);
 
 const filedUnder = new Set(spellItems.map((s) => s.system.location.value));

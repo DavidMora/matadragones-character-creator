@@ -13,6 +13,12 @@ import { baselineForCR, levelFromCR } from './baseline5e.js';
 import { damagePerRound } from './parse5e.js';
 import { modernizeSpellNames } from './spellnames.js';
 import {
+  legendaryTriggerPrefix,
+  translateMechanicsText,
+  translateNamedSpecial,
+  translateRecharge,
+} from './mechanics5e.js';
+import {
   abilityFor,
   acFor,
   clampLevel,
@@ -264,6 +270,7 @@ export function convertAbilityText(text, { level, spellTier }) {
     `spell attack +${attack}`,
   );
   result = result.replace(/\bsaving throw\b/gi, 'save');
+  result = translateMechanicsText(result);
   return modernizeSpellNames(result);
 }
 
@@ -312,6 +319,14 @@ export function convertCreature(data, { level: levelOverride, tiers: tierOverrid
   const strikes = buildStrikes(data, level, tiers);
   const languages = mapLanguages(data.languages);
   const spellcasting = buildSpellcasting(data, level, tiers);
+  const built = buildSpecials(data, textContext);
+  const senses = (data.senses ?? [])
+    .map((s) => (SENSE_MAP[s.type] ? { ...SENSE_MAP[s.type], range: s.range } : null))
+    .filter(Boolean);
+  // Senses a translated trait produced (Keen Smell -> scent), deduped by type.
+  for (const sense of built.senses) {
+    if (!senses.some((s) => s.type === sense.type)) senses.push(sense);
+  }
   const spec = {
     name: data.name,
     level,
@@ -323,9 +338,7 @@ export function convertCreature(data, { level: levelOverride, tiers: tierOverrid
     description: '',
     sourceNote: buildProvenance(data, tiers, level),
     perception: { tier: tiers.perception, mod: perceptionFor(level, tiers.perception) },
-    senses: (data.senses ?? [])
-      .map((s) => (SENSE_MAP[s.type] ? { ...SENSE_MAP[s.type], range: s.range } : null))
-      .filter(Boolean),
+    senses,
     abilities,
     ac: { tier: tiers.ac, value: acFor(level, tiers.ac) },
     saves: {
@@ -348,7 +361,7 @@ export function convertCreature(data, { level: levelOverride, tiers: tierOverrid
         }
       : null,
     spellcasting,
-    specials: buildSpecials(data, textContext),
+    specials: built.specials,
     // One set: "Damage Immunities poison" and "Condition Immunities poisoned"
     // both map to the poison slug and must not list it twice.
     immunities: [...new Set(mapTypedList(data.immunities).concat(
@@ -558,14 +571,20 @@ const SECTION_TO_ACTION = {
   action: { actionType: 'action', actions: 1 },
   'bonus action': { actionType: 'free', actions: null },
   reaction: { actionType: 'reaction', actions: null },
-  'legendary action': { actionType: 'free', actions: null },
+  // Legendary and mythic actions act out of turn; PF2e's out-of-turn tool is
+  // the reaction, and buildSpecials states the trigger. Lair actions belong
+  // to the place, so they stay free actions.
+  'legendary action': { actionType: 'reaction', actions: null },
   'lair action': { actionType: 'free', actions: null },
-  'mythic action': { actionType: 'free', actions: null },
-  'villain action': { actionType: 'free', actions: null },
+  'mythic action': { actionType: 'reaction', actions: null },
+  'villain action': { actionType: 'reaction', actions: null },
 };
+
+const LEGENDARY_SECTIONS = new Set(['legendary action', 'mythic action', 'villain action']);
 
 function buildSpecials(data, textContext) {
   const out = [];
+  const senses = [];
   for (const special of data.specials ?? []) {
     if (/^multiattack$/i.test(special.name)) continue;
     // A parsed spell list becomes a real spellcasting entry; keeping the
@@ -573,17 +592,40 @@ function buildSpecials(data, textContext) {
     if (data.spellcasting && /spellcasting/i.test(special.name)) continue;
     const isAttack = (data.attacks ?? []).some((a) => a.name === special.name);
     if (isAttack) continue;
+
+    // Source-game-exclusive machinery first: a recognised trait is replaced
+    // by its PF2e idiom wholesale, or dropped when PF2e has no use for it.
+    const translated = translateNamedSpecial(special, textContext);
+    if (translated) {
+      if (translated.drop) {
+        for (const sense of translated.senses ?? []) senses.push(sense);
+        continue;
+      }
+      out.push({ ...translated, section: special.section });
+      continue;
+    }
+
     const kind = SECTION_TO_ACTION[special.section] ?? SECTION_TO_ACTION.trait;
+    let name = special.name;
+    let description = convertAbilityText(special.description, textContext);
+    const recharge = translateRecharge(name);
+    if (recharge) {
+      name = recharge.name;
+      description += recharge.sentence;
+    }
+    if (LEGENDARY_SECTIONS.has(special.section)) {
+      description = legendaryTriggerPrefix(description);
+    }
     out.push({
-      name: special.name.replace(/\s*\([^)]*\)\s*$/, ''),
+      name: name.replace(/\s*\([^)]*\)\s*$/, ''),
       section: special.section,
       actionType: kind.actionType,
       actions: kind.actions,
       category: special.section === 'trait' ? 'defensive' : 'offensive',
-      description: convertAbilityText(special.description, textContext),
+      description,
     });
   }
-  return out;
+  return { specials: out, senses };
 }
 
 function buildProvenance(data, tiers, level) {

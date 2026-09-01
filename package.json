@@ -5,13 +5,14 @@
   "type": "module",
   "description": "Foundry VTT module: build PF2e creatures from the Building Creatures tables, or import 5th-edition stat blocks deterministically.",
   "scripts": {
-    "test": "node test/check-imports.mjs && node test/check-tables.mjs && node test/check-parse.mjs && node test/check-convert.mjs && node test/check-actor.mjs && node test/check-templates.mjs",
+    "test": "node test/check-imports.mjs && node test/check-tables.mjs && node test/check-parse.mjs && node test/check-spellnames.mjs && node test/check-convert.mjs && node test/check-actor.mjs && node test/check-templates.mjs",
     "test:imports": "node test/check-imports.mjs",
     "test:tables": "node test/check-tables.mjs",
     "test:parse": "node test/check-parse.mjs",
     "test:convert": "node test/check-convert.mjs",
     "test:actor": "node test/check-actor.mjs",
-    "test:templates": "node test/check-templates.mjs"
+    "test:templates": "node test/check-templates.mjs",
+    "test:spellnames": "node test/check-spellnames.mjs"
   },
   "devDependencies": {
     "handlebars": "^4.7.8"

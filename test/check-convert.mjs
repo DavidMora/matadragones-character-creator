@@ -52,7 +52,10 @@ check('resistances mapped with table value', spec.resistances.map((r) => r.type)
 check('resistance value from table', spec.resistances[0].value, tables.resistanceFor(9));
 check('condition immunities mapped to pf2e slugs',
   spec.immunities.includes('fear-effects') && spec.immunities.includes('poison'), true);
-check('darkvision mapped', spec.senses, [{ type: 'darkvision', acuity: 'precise', range: 60 }]);
+check('darkvision mapped and Keen Smell translated to scent', spec.senses, [
+  { type: 'darkvision', acuity: 'precise', range: 60 },
+  { type: 'scent', acuity: 'imprecise', range: 30 },
+]);
 check('perception skill folded out, stealth kept, athletics added',
   spec.skills.map((s) => s.slug).sort(), ['athletics', 'stealth']);
 check('Giant maps to jotun', spec.languages, ['jotun']);
@@ -74,8 +77,8 @@ const expectedDC = tables.spellDCFor(9, 'moderate');
 check('ability DC recomputed', breath.description.includes(`DC ${expectedDC} Fortitude save`), true);
 check('printed DC gone', breath.description.includes('DC 17'), false);
 check('saving throw phrasing converted', /saving throw/.test(breath.description), false);
-check('multiattack dropped, attacks not duplicated as specials',
-  spec.specials.map((s) => s.name), ['Rime Body', 'Keen Smell', 'Frozen Breath', 'Ice Shield']);
+check('multiattack dropped, attacks and translated traits not duplicated',
+  spec.specials.map((s) => s.name), ['Rime Body', 'Frozen Breath', 'Ice Shield']);
 check('reaction typed', spec.specials.find((s) => s.name === 'Ice Shield').actionType, 'reaction');
 
 // Determinism: converting the same parse twice is byte-identical.
@@ -119,9 +122,9 @@ check('legacy names renamed, capital preserved',
 check('word boundaries respected',
   modernizeSpellNames('The mage handles the blinking lights.'),
   'The mage handles the blinking lights.');
-check('longest name wins',
-  modernizeSpellNames('vampiric exsanguination then vampiric touch'),
-  'vampiric maelstrom then vampiric feast');
+check('whole names match, not fragments',
+  modernizeSpellNames('casts commune with nature and vampiric touch'),
+  'casts commune and vampiric feast');
 check('renaming is idempotent: no remaster name is itself renamed',
   Object.values(SPELL_RENAMES).some((name) => name in SPELL_RENAMES), false);
 
@@ -155,7 +158,8 @@ check('innate spells remastered with frequencies',
     ['telekinetic hand', null, true],
     ['translocate', null, true],
     ['paralyze', 3, false],
-    ['vision of death', 1, false],
+    // Still a real spell in the compendium, so its name survives untouched.
+    ['phantasmal killer', 1, false],
   ]);
 // "dimension door" (3/day) and "misty step" (at will) both remaster to
 // translocate; at-will is collected first, so the better frequency wins.
@@ -165,7 +169,7 @@ check('duplicate remaster names deduped in at-will\'s favour',
 const casterEntry = callerSpec.spellcasting.entries[1];
 check('cantrips filed with the slot caster, deduped against nothing',
   casterEntry.spells.map((s) => s.name),
-  ['caustic blast', 'telekinetic hand', 'force barrage', 'mystic armor', 'blazing bolt', 'fireball']);
+  ['acid splash', 'telekinetic hand', 'force barrage', 'mystic armor', 'blazing bolt', 'fireball']);
 check('slots copied per rank', casterEntry.slots, { 1: 4, 2: 3, 3: 2 });
 
 check('spellcasting traits do not duplicate as prose specials',
@@ -179,6 +183,47 @@ check('derived skills stay moderate',
 check('caller languages mapped', callerSpec.languages, ['chthonian', 'common']);
 check('grappled prose becomes a Grab attack effect',
   callerSpec.strikes[0].attackEffects, ['grab']);
+
+// --- Source-game-exclusive mechanics -----------------------------------------
+const { ELDER_WYRM } = await import('./fixtures.mjs');
+const wyrm = convert.convertCreature(parse5eStatBlock(ELDER_WYRM).data);
+const byName = (name) => wyrm.specials.find((s) => s.name === name);
+
+check('wyrm converts at level 13', wyrm.level, 13);
+check('legendary resistance becomes a 3/day free action', [
+  byName('Legendary Resistance').actionType,
+  byName('Legendary Resistance').frequency,
+], ['free', { max: 3, per: 'day' }]);
+check('legendary resistance text is pf2e idiom',
+  byName('Legendary Resistance').description.includes('succeeds at the saving throw instead'), true);
+check('magic resistance becomes a status bonus',
+  byName('Magic Resistance').description, 'The creature has a +1 status bonus to all saving throws against magical effects.');
+check('keen smell becomes an imprecise scent sense',
+  wyrm.senses.some((s) => s.type === 'scent' && s.acuity === 'imprecise'), true);
+check('keen smell trait itself is gone', byName('Keen Smell'), undefined);
+check('magic weapons trait dropped entirely', byName('Magic Weapons'), undefined);
+check('advantage prose becomes a circumstance bonus',
+  byName('Ambusher').description, 'The wyrm gains a +2 circumstance bonus on attack rolls against any creature it has surprised.');
+
+const wyrmBreath = byName('Frost Breath');
+check('recharge stripped from the name', wyrmBreath !== undefined, true);
+check('recharge becomes a cooldown sentence',
+  wyrmBreath.description.includes("can't use this ability again for 1d4 rounds"), true);
+check('breath DC still recomputed', wyrmBreath.description.includes(`DC ${tables.spellDCFor(13, 'moderate')}`), true);
+
+const tail = byName('Tail Swipe');
+check('legendary actions become triggered reactions', [
+  tail.actionType, tail.description.startsWith("Trigger The end of another creature's turn."),
+], ['reaction', true]);
+
+const { packAttackDice, translateNamedSpecial } = await load('mechanics5e.js');
+check('pack attack dice scale with level',
+  [packAttackDice(1), packAttackDice(8), packAttackDice(13), packAttackDice(20)],
+  ['1d4', '1d6', '2d6', '2d8']);
+check('pack tactics translates to Pack Attack',
+  translateNamedSpecial({ name: 'Pack Tactics', description: 'x' }, { level: 8 }).description.includes('1d6 extra damage'), true);
+check('unknown traits pass through untranslated',
+  translateNamedSpecial({ name: 'Rampage', description: 'x' }, { level: 8 }), null);
 
 // Innate-only casting classifies moderate; a mere ability DC still anchors
 // the prose without inventing entries.

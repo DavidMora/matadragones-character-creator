@@ -53,6 +53,24 @@ mapped to its remaster name and resolved against the pf2e spells compendium.
 A name with no compendium match is never guessed: it is listed in an
 "Unconverted Spells" note on the sheet for the GM to replace.
 
+## Source-game-exclusive mechanics
+
+Machinery the source game has and PF2e does not is translated to the PF2e
+idiom rather than carried as dead prose: Legendary Resistance becomes a 3/day
+free action the sheet tracks, Magic Resistance a +1 status bonus to saves
+against magic, Pack Tactics the wolf-style Pack Attack (extra damage scaled by
+level), Keen Smell an imprecise scent sense, Sunlight Sensitivity the Light
+Blindness idiom, and "(Recharge 5-6)" tags a can't-use-again-for-1d4-rounds
+sentence. Legendary and mythic actions become reactions triggered at the end
+of another creature's turn. Inside all remaining prose, advantage and
+disadvantage become +2/-2 circumstance modifiers. Unrecognised traits pass
+through untouched - a wrong translation is worse than prose the GM can judge.
+
+The spell rename map is the official list from the pf2e wiki's
+Remaster-Changes page plus curated 5e equivalents, validated by a test against
+a snapshot of the spells compendium: every rename target must be a real
+spell, and no source may shadow one that still exists.
+
 ## What does not convert
 
 Limited-use ability economies (recharge, legendary action budgets) do not map

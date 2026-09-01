@@ -78,6 +78,11 @@ export function actorDataFromSpec(spec) {
         actions: { value: special.actionType === 'action' ? special.actions ?? 1 : null },
         category: special.category ?? null,
         description: { value: paragraphs(special.description) },
+        // Limited-use abilities (Legendary Resistance 3/day) carry a real
+        // frequency so the sheet tracks the uses.
+        ...(special.frequency
+          ? { frequency: { value: special.frequency.max, max: special.frequency.max, per: special.frequency.per } }
+          : {}),
       },
     });
   }
