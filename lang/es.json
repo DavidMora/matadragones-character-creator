@@ -1,7 +1,8 @@
 {
   "MCC": {
     "View": {
-      "Title": "Creador de criaturas"
+      "Title": "Creador de criaturas Matadragones",
+      "Button": "Matadragones"
     },
     "Tab": {
       "Import": "Importar un bloque de estadísticas",

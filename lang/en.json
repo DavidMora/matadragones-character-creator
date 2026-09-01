@@ -1,7 +1,8 @@
 {
   "MCC": {
     "View": {
-      "Title": "Character Creator"
+      "Title": "Matadragones Character Creator",
+      "Button": "Matadragones"
     },
     "Tab": {
       "Import": "Import a Stat Block",
