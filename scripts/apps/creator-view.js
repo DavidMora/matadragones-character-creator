@@ -255,10 +255,15 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
 
   // --- Input binding --------------------------------------------------------
 
+  #changeBound = false;
+
   _onRender(context, options) {
     super._onRender?.(context, options);
-    const root = this.element;
-    root.addEventListener('change', (event) => this.#onFieldChange(event));
+    // The frame element survives re-renders, so bind the delegated listener
+    // once - binding per render would fire the handler N times per change.
+    if (this.#changeBound) return;
+    this.#changeBound = true;
+    this.element.addEventListener('change', (event) => this.#onFieldChange(event));
   }
 
   #onFieldChange(event) {
