@@ -36,6 +36,8 @@ check('speed and other speeds', [
 ], [40, [{ type: 'climb', value: 30 }]]);
 check('size and traits', [data.system.traits.size.value, data.system.traits.value], ['lg', ['beast']]);
 check('languages', data.system.details.languages.value, ['common']);
+check('language details preserved (telepathy and the like)',
+  data.system.details.languages.details, 'telepathy 100 feet');
 check('iwr shapes', [
   data.system.attributes.immunities,
   data.system.attributes.resistances,

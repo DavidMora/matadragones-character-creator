@@ -99,6 +99,63 @@ export const CONDITION_MAP = {
   unconscious: 'unconscious',
 };
 
+/**
+ * Language names -> pf2e remaster slugs (verified against the system's
+ * LANGUAGES list). Both games' legacy names appear because imported blocks
+ * use either. Primordial is the umbrella tongue of all four elemental planes,
+ * so it maps to all four. Anything not here - telepathy, "understands but
+ * can't speak" clauses, homebrew tongues - is preserved verbatim in the
+ * languages details field rather than dropped.
+ */
+export const LANGUAGE_MAP = {
+  common: ['common'],
+  abyssal: ['chthonian'],
+  aklo: ['aklo'],
+  aquan: ['thalassic'],
+  auran: ['sussuran'],
+  celestial: ['empyrean'],
+  daemonic: ['daemonic'],
+  'deep speech': ['aklo'],
+  draconic: ['draconic'],
+  druidic: ['wildsong'],
+  dwarvish: ['dwarven'],
+  dwarven: ['dwarven'],
+  elvish: ['elven'],
+  elven: ['elven'],
+  giant: ['jotun'],
+  gnoll: ['kholo'],
+  gnomish: ['gnomish'],
+  gnome: ['gnomish'],
+  goblin: ['goblin'],
+  halfling: ['halfling'],
+  ignan: ['pyric'],
+  infernal: ['diabolic'],
+  jotun: ['jotun'],
+  necril: ['necril'],
+  orc: ['orcish'],
+  orcish: ['orcish'],
+  primordial: ['petran', 'pyric', 'sussuran', 'thalassic'],
+  protean: ['protean'],
+  sylvan: ['fey'],
+  terran: ['petran'],
+  undercommon: ['sakvroth'],
+};
+
+/** Split printed languages into valid slugs and a verbatim details string. */
+export function mapLanguages(entries = []) {
+  const value = [];
+  const details = [];
+  for (const entry of entries) {
+    const mapped = LANGUAGE_MAP[entry.toLowerCase().trim()];
+    if (mapped) {
+      for (const slug of mapped) if (!value.includes(slug)) value.push(slug);
+    } else {
+      details.push(entry);
+    }
+  }
+  return { value, details: details.join('; ') };
+}
+
 const SENSE_MAP = {
   darkvision: { type: 'darkvision', acuity: 'precise' },
   blindsight: { type: 'echolocation', acuity: 'precise' },
@@ -253,13 +310,16 @@ export function convertCreature(data, { level: levelOverride, tiers: tierOverrid
 
   const textContext = { level, spellTier: tiers.spell };
   const strikes = buildStrikes(data, level, tiers);
+  const languages = mapLanguages(data.languages);
+  const spellcasting = buildSpellcasting(data, level, tiers);
   const spec = {
     name: data.name,
     level,
     size: data.size ?? 'med',
     traits,
     rarity: 'common',
-    languages: (data.languages ?? []).map((l) => l.toLowerCase()).filter((l) => /^[a-z' -]+$/.test(l)),
+    languages: languages.value,
+    languageDetails: languages.details,
     description: '',
     sourceNote: buildProvenance(data, tiers, level),
     perception: { tier: tiers.perception, mod: perceptionFor(level, tiers.perception) },
@@ -279,7 +339,7 @@ export function convertCreature(data, { level: levelOverride, tiers: tierOverrid
       others: (data.speeds?.others ?? []).filter((s) => ['burrow', 'climb', 'fly', 'swim'].includes(s.type)),
     },
     strikes,
-    skills: buildSkills(data, level),
+    skills: buildSkills(data, level, spellcasting),
     spell: tiers.spell
       ? {
           tier: tiers.spell,
@@ -287,13 +347,15 @@ export function convertCreature(data, { level: levelOverride, tiers: tierOverrid
           attack: spellAttackFor(level, tiers.spell),
         }
       : null,
-    spellcasting: buildSpellcasting(data, level, tiers),
+    spellcasting,
     specials: buildSpecials(data, textContext),
-    immunities: mapTypedList(data.immunities).concat(
+    // One set: "Damage Immunities poison" and "Condition Immunities poisoned"
+    // both map to the poison slug and must not list it twice.
+    immunities: [...new Set(mapTypedList(data.immunities).concat(
       (data.conditionImmunities ?? [])
         .map((c) => CONDITION_MAP[c.toLowerCase()])
         .filter(Boolean),
-    ),
+    ))],
     resistances: mapTypedList(data.resistances).map((type) => ({ type, value: resistanceFor(level) })),
     weaknesses: mapTypedList(data.vulnerabilities).map((type) => ({ type, value: resistanceFor(level) })),
     tiers,
@@ -452,7 +514,10 @@ function clampRange(value) {
   return Math.min(Math.max(Math.round(value / 5) * 5, 5), 500);
 }
 
-function buildSkills(data, level) {
+/** The skill each casting tradition trains, per PF2e convention. */
+const TRADITION_SKILL = { arcane: 'arcana', divine: 'religion', occult: 'occultism', primal: 'nature' };
+
+function buildSkills(data, level, spellcasting = null) {
   const byslug = new Map();
   for (const { name, bonus } of data.skills ?? []) {
     const slug = SKILL_MAP[name.toLowerCase()];
@@ -467,11 +532,19 @@ function buildSkills(data, level) {
     const existing = byslug.get(slug);
     if (!existing || existing.tier === 'moderate') byslug.set(slug, { slug, tier });
   }
-  // A physically imposing creature fights with Athletics even when the
-  // printed block never lists it.
-  if (!byslug.has('athletics') && (data.abilities?.str ?? 0) >= 3) {
-    byslug.set('athletics', { slug: 'athletics', tier: 'moderate' });
-  }
+  // Source blocks under-list skills a PF2e sheet is expected to carry, so a
+  // few follow from the concept, deterministically and at moderate only:
+  // a physically imposing creature fights with Athletics, an agile one has
+  // Acrobatics, a forceful personality Intimidation, and a caster knows the
+  // skill of its tradition. Printed skills always win over these defaults.
+  const derive = (slug, condition) => {
+    if (condition && !byslug.has(slug)) byslug.set(slug, { slug, tier: 'moderate' });
+  };
+  derive('athletics', (data.abilities?.str ?? 0) >= 3);
+  derive('acrobatics', (data.abilities?.dex ?? 0) >= 4);
+  derive('intimidation', (data.abilities?.cha ?? 0) >= 4);
+  const tradition = spellcasting?.entries?.[0]?.tradition;
+  derive(TRADITION_SKILL[tradition], Boolean(tradition));
   return [...byslug.values()].map(({ slug, tier }) => ({
     slug,
     name: capitalise(slug),
@@ -562,6 +635,7 @@ export function specFromBuilder(draft) {
     traits: (draft.traits ?? []).filter(Boolean),
     rarity: draft.rarity ?? 'common',
     languages: [],
+    languageDetails: '',
     description: draft.description ?? '',
     sourceNote: `Built with the ${draft.roadMap} road map at level ${level}.`,
     perception: { tier: draft.perception, mod: perceptionFor(level, draft.perception) },

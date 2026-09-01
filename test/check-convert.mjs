@@ -55,7 +55,18 @@ check('condition immunities mapped to pf2e slugs',
 check('darkvision mapped', spec.senses, [{ type: 'darkvision', acuity: 'precise', range: 60 }]);
 check('perception skill folded out, stealth kept, athletics added',
   spec.skills.map((s) => s.slug).sort(), ['athletics', 'stealth']);
-check('languages carried', spec.languages, ['giant']);
+check('Giant maps to jotun', spec.languages, ['jotun']);
+check('duplicate immunity slugs collapse to one', spec.immunities, ['poison', 'fear-effects']);
+
+// --- Languages ---------------------------------------------------------------
+check('remaster language renames', convert.mapLanguages(['Abyssal', 'Celestial', 'Infernal', 'Undercommon', 'Deep Speech']),
+  { value: ['chthonian', 'empyrean', 'diabolic', 'sakvroth', 'aklo'], details: '' });
+check('primordial fans out to the elemental tongues',
+  convert.mapLanguages(['Primordial']).value, ['petran', 'pyric', 'sussuran', 'thalassic']);
+check('unmappable entries survive as details, never dropped',
+  convert.mapLanguages(['Common', 'telepathy 120 ft', "understands Sylvan but can't speak"]),
+  { value: ['common'], details: "telepathy 120 ft; understands Sylvan but can't speak" });
+check('language slugs deduped', convert.mapLanguages(['Elvish', 'Elven']).value, ['elven']);
 
 // The printed DC 17 must not survive; the level's DC must appear instead.
 const breath = spec.specials.find((s) => s.name === 'Frozen Breath');
@@ -159,6 +170,13 @@ check('slots copied per rank', casterEntry.slots, { 1: 4, 2: 3, 3: 2 });
 
 check('spellcasting traits do not duplicate as prose specials',
   callerSpec.specials.some((s) => /spellcasting/i.test(s.name)), false);
+// Printed Arcana and Deception survive; Intimidation follows Cha +4 and
+// Religion follows the divine tradition; Dex +2 earns nothing.
+check('derived skills follow the concept', callerSpec.skills.map((s) => s.slug).sort(),
+  ['arcana', 'deception', 'intimidation', 'religion']);
+check('derived skills stay moderate',
+  callerSpec.skills.filter((s) => ['intimidation', 'religion'].includes(s.slug)).every((s) => s.tier === 'moderate'), true);
+check('caller languages mapped', callerSpec.languages, ['chthonian', 'common']);
 check('grappled prose becomes a Grab attack effect',
   callerSpec.strikes[0].attackEffects, ['grab']);
 

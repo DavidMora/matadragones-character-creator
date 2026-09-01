@@ -144,7 +144,7 @@ export function actorDataFromSpec(spec) {
       },
       details: {
         level: { value: spec.level },
-        languages: { value: spec.languages ?? [], details: '' },
+        languages: { value: spec.languages ?? [], details: spec.languageDetails ?? '' },
         blurb: '',
         publicNotes: notes,
         privateNotes: '',

@@ -251,7 +251,7 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
           + entry.spells.map((s) => s.name
             + (s.constant ? ' (constant)' : s.atWill ? ' (at will)' : s.uses ? ` (${s.uses}/day)` : '')).join(', '),
       })),
-      languages: spec.languages.join(', '),
+      languages: [spec.languages.join(', '), spec.languageDetails].filter(Boolean).join('; '),
       specials: spec.specials.map((s) => ({
         name: s.name,
         actionType: s.actionType,

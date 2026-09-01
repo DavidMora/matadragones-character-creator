@@ -86,6 +86,7 @@ export const SAMPLE_SPEC = {
   traits: ['beast'],
   rarity: 'common',
   languages: ['common'],
+  languageDetails: 'telepathy 100 feet',
   description: 'A test creature.',
   sourceNote: 'Imported for tests.',
   perception: { tier: 'high', mod: 18 },
