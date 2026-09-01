@@ -24,6 +24,41 @@ const badTargets = Object.entries(equip.GEAR_MAP).filter(([, target]) => !(targe
 check('every gear mapping targets a real item (bad: '
   + badTargets.map(([k, v]) => `${k}->${v}`).join(', ') + ')', badTargets.length, 0);
 
+/*
+ * Pinned entry by entry, not just "the target resolves": an audit changed
+ * maul->greatclub and quarterstaff->longsword and every check still passed,
+ * because a wrong weapon resolves exactly as well as a right one.
+ */
+check('every gear mapping is the item it should be', equip.GEAR_MAP, {
+  battleaxe: 'battle axe',
+  handaxe: 'hatchet',
+  quarterstaff: 'staff',
+  'light crossbow': 'crossbow',
+  'hand crossbow': 'hand crossbow',
+  'short sword': 'shortsword',
+  shortsword: 'shortsword',
+  'studded leather': 'studded leather armor',
+  leather: 'leather armor',
+  hide: 'hide armor',
+  'ring mail': 'chain mail',
+  'scale mail': 'scale mail',
+  'chain shirt': 'chain shirt',
+  'splint armor': 'splint mail',
+  splint: 'splint mail',
+  plate: 'full plate',
+  'plate armor': 'full plate',
+  'plate mail': 'full plate',
+  'half plate': 'half plate',
+  shield: 'steel shield',
+  'wooden shield': 'wooden shield',
+  greatclub: 'greatclub',
+  maul: 'maul',
+  morningstar: 'morningstar',
+  sickle: 'sickle',
+  scimitar: 'scimitar',
+  'war pick': 'pick',
+});
+
 check('battleaxe spelling differs between the games', equip.normaliseGearName('Battleaxe'), 'battle axe');
 check('a +1 weapon is still the base weapon', equip.normaliseGearName('+1 Longsword'), 'longsword');
 check('plurals and articles trimmed', equip.normaliseGearName('Javelins'), 'javelin');
@@ -89,7 +124,11 @@ function fakeActor() {
   return {
     items,
     createEmbeddedDocuments: async (_type, sources) => sources.map((source) => {
-      const created = { ...structuredClone(source), _id: `item${(counter += 1)}` };
+      // Foundry assigns an id only when the source does not carry one, so
+      // the fake must too - overwriting unconditionally made the
+      // "compendium id dropped" assertion unfalsifiable.
+      const clone = structuredClone(source);
+      const created = { ...clone, _id: clone._id ?? `item${(counter += 1)}` };
       items.push(created);
       return created;
     }),
@@ -104,6 +143,14 @@ check('armour is worn in its slot', actor.items[0].system.equipped,
   { carryType: 'worn', handsHeld: 0, inSlot: true, invested: null });
 check('weapons and shields are held', actor.items[1].system.equipped,
   { carryType: 'held', handsHeld: 1, invested: null });
+// A maul held in one hand reports itself unequipped: pf2e compares handsHeld
+// against the item's usage.
+check('a two-handed weapon is held in two hands',
+  equip.equippedState('weapon', { value: 'held-in-two-hands' }),
+  { carryType: 'held', handsHeld: 2, invested: null });
+check('a potion is not gripped in a fist',
+  equip.equippedState('consumable', { value: 'held-in-one-hand' }),
+  { carryType: 'worn', handsHeld: 0, invested: null });
 check('quantity normalised to one', actor.items.map((i) => i.system.quantity), [1, 1, 1, 1]);
 check('compendium id dropped', actor.items.every((i) => i._id.startsWith('item')), true);
 

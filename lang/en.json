@@ -67,7 +67,8 @@
       "DefaultMark": "•",
       "EmptyPreview": "Parse a stat block to see the converted creature here.",
       "Rewrite": "Rewrite abilities in PF2e style",
-      "RewriteHint": "Optional: sends ability prose to OpenAI to be rephrased in PF2e idiom. DCs and saves are recomputed from the tables afterwards, so the model cannot drift a number."
+      "RewriteHint": "Optional: sends ability prose to OpenAI to be rephrased in PF2e idiom. DCs and saves are recomputed from the tables afterwards, so the model cannot drift a number.",
+      "RewriteSkipped": "These abilities keep their PF2e translation, so the rewrite was not applied to them: {list}"
     },
     "Builder": {
       "BasicsHeading": "Basics",
@@ -271,7 +272,8 @@
       "NoWeakness": "Strong AC, HP, attack and damage together leave players no angle; the road maps always concede something.",
       "Corrected": "{key}: {from} → {to}",
       "Score": "Power score {score} (published road maps: {band})",
-      "ScoreTooltip": "Tier points summed across the statistics: extreme +2, high +1, moderate 0, low -1, terrible -2. The band is measured from the published road maps, so anything the book endorses passes."
+      "ScoreTooltip": "Tier points summed across the statistics: extreme +2, high +1, moderate 0, low -1, terrible -2. The band is measured from the published road maps, so anything the book endorses passes.",
+      "Blocked": "This creature breaks a creature-building rule, so it was not created: {message}"
     },
     "Frequency": {
       "AtWill": "at will",

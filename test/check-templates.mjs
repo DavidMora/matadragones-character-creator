@@ -185,7 +185,7 @@ const binds = new Set([...importHtml.matchAll(/data-bind="([\w.]+)"/g),
   ...builderHtml.matchAll(/data-bind="([\w.]+)"/g)].map((m) => m[1]));
 for (const bind of binds) {
   const [scope] = bind.split('.');
-  check(`bind ${bind} uses a routed scope`, ['import', 'builder', 'concept'].includes(scope), true);
+  check(`bind ${bind} uses a routed scope`, ['import', 'builder', 'concept', 'art'].includes(scope), true);
 }
 check('binds cover both tabs', binds.size >= 10, true);
 

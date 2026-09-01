@@ -56,7 +56,25 @@ for (const [name, map] of Object.entries(tables.ROAD_MAPS)) {
     warnings.some((w) => w.key === 'budget'), false);
 }
 
-check('band is measured, not asserted', rules.publishedBand().max >= 4, true);
+/*
+ * The loop above cannot fail by construction - publishedBand() is computed
+ * FROM ROAD_MAPS, so any road map is inside it by definition. An audit
+ * turned `soldier` into a two-extreme monster and the loop stayed green.
+ * Pinning the band and each road map's score as literals is what actually
+ * catches a road map, or the scoring, drifting.
+ */
+check('the published band is exactly this', rules.publishedBand(), { min: 0, max: 4 });
+check('each road map scores what the book implies', Object.fromEntries(
+  Object.entries(tables.ROAD_MAPS).map(([name, map]) => [name, rules.budgetScore(map)]),
+), {
+  balanced: 0, brute: 0, sniper: 1, skirmisher: 0, soldier: 4,
+  'magical-striker': 2, spellcaster: 0,
+});
+check('tier points are the documented weights', [
+  rules.budgetScore({ ac: 'extreme' }), rules.budgetScore({ ac: 'high' }),
+  rules.budgetScore({ ac: 'moderate' }), rules.budgetScore({ ac: 'low' }),
+  rules.budgetScore({ ac: 'terrible' }),
+], [2, 1, 0, -1, -2]);
 
 const overtuned = {
   level: 5, perception: 'extreme', ac: 'extreme', fortitude: 'extreme', reflex: 'high',
@@ -67,6 +85,29 @@ const verdict = rules.validateDraft(overtuned);
 check('too many extremes is an error', verdict.errors.some((e) => e.key === 'extremes'), true);
 check('over-budget warns', verdict.warnings.some((w) => w.key === 'budget'), true);
 check('a creature with no weakness warns', verdict.warnings.some((w) => w.key === 'nogaps'), true);
+
+// The over-tuned fixture has six extremes, so it trips any `> N` for N < 6;
+// these probe the boundary the rule actually claims.
+const withExtremes = (count) => {
+  const keys = ['damage', 'attack', 'ac', 'hp', 'perception', 'fortitude'];
+  const draft = { level: 5, perception: 'moderate', ac: 'moderate', fortitude: 'moderate',
+    reflex: 'moderate', will: 'moderate', hp: 'moderate', attack: 'moderate', damage: 'moderate',
+    spell: null, abilities: { str: 'moderate', dex: 'moderate', con: 'moderate', int: 'moderate', wis: 'moderate', cha: 'moderate' } };
+  for (const key of keys.slice(0, count)) draft[key] = key === 'hp' ? 'high' : 'extreme';
+  return draft;
+};
+check('one extreme is fine', rules.validateDraft(withExtremes(1)).errors, []);
+check('two extremes warn but do not block', [
+  rules.validateDraft(withExtremes(2)).errors.length,
+  rules.validateDraft(withExtremes(2)).warnings.some((w) => w.key === 'extremes'),
+], [0, true]);
+check('three extremes is an error', rules.validateDraft(withExtremes(3)).errors.some((e) => e.key === 'extremes'), true);
+check('level boundaries: -1 and 24 pass, -2 and 25 do not', [
+  rules.validateDraft({ ...withExtremes(0), level: -1 }).errors.length,
+  rules.validateDraft({ ...withExtremes(0), level: 24 }).errors.length,
+  rules.validateDraft({ ...withExtremes(0), level: -2 }).errors.some((e) => e.key === 'level'),
+  rules.validateDraft({ ...withExtremes(0), level: 25 }).errors.some((e) => e.key === 'level'),
+], [0, 0, true, true]);
 
 const enforced = rules.enforceDraft(overtuned);
 check('enforcement leaves exactly two extremes', rules.extremeCount(enforced.draft), 2);
@@ -144,7 +185,14 @@ const built = {
 };
 const spec = specFromBuilder(built);
 check('dropped spell lands in the entry with its uuid',
-  spec.spellcasting.entries[0].spells, [{ name: 'fireball', uuid: 'Compendium.pf2e.spells-srd.Item.abc', uses: null, atWill: false, constant: false }]);
+  spec.spellcasting.entries[0].spells,
+  [{ name: 'fireball', uuid: 'Compendium.pf2e.spells-srd.Item.abc', uses: null, atWill: false, constant: false, heightenTo: 3 }]);
+// A creature casts at half its level rounded up, so its innate spells are
+// heightened rather than left at their printed rank.
+check('spells carry the rank the creature casts at', [
+  (await load('convert.js')).maxSpellRank(1), (await load('convert.js')).maxSpellRank(6),
+  (await load('convert.js')).maxSpellRank(16), (await load('convert.js')).maxSpellRank(24),
+], [1, 3, 8, 10]);
 check('entry uses the chosen tradition and table DC',
   [spec.spellcasting.entries[0].tradition, spec.spellcasting.entries[0].dc],
   ['occult', tables.spellDCFor(6, 'high')]);
@@ -281,7 +329,8 @@ function fakeCastingActor() {
     items,
     updates,
     createEmbeddedDocuments: async (_type, sources) => sources.map((source) => {
-      const created = { ...structuredClone(source), _id: `made${(counter += 1)}` };
+      const clone = structuredClone(source);
+      const created = { ...clone, _id: clone._id ?? `made${(counter += 1)}` };
       items.push(created);
       return created;
     }),

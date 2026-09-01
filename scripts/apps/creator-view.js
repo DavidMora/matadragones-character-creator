@@ -65,6 +65,8 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
   #builder = null;
   #busy = null; // null | 'parse' | 'rewrite' | 'concept' | 'create' | 'artwork'
   #brief = '';
+  #gearEntry = '';
+  #wantArt = false;
   #partyLevel = 1;
   #partySize = 4;
   #role = 'matched';
@@ -216,6 +218,8 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
         options: PF2E_SKILLS.map((value) => ({ value, selected: value === skill.slug })),
         tiers: tierOptions(skill.tier, ['extreme', 'high', 'moderate', 'low']),
       })),
+      gearEntry: this.#gearEntry,
+      wantArt: this.#wantArt,
       contents: {
         spells: draft.contents.spells.map((entry, index) => ({
           ...entry,
@@ -343,7 +347,7 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
             + (s.constant ? ' (constant)' : s.atWill ? ' (at will)' : s.uses ? ` (${s.uses}/day)` : '')).join(', '),
       })),
       languages: [spec.languages.join(', '), spec.languageDetails].filter(Boolean).join('; '),
-      items: (spec.equipment ?? []).join(', '),
+      items: (spec.equipment ?? []).map((item) => item.name).join(', '),
       specials: spec.specials.map((s) => ({
         name: s.name,
         actionType: s.actionType,
@@ -462,6 +466,13 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
       return;
     }
 
+    if (scope === 'art') {
+      // The checkbox is state, not a DOM reading: every tier change
+      // re-renders, and a checkbox with no backing field silently unticks.
+      this.#wantArt = Boolean(value);
+      return;
+    }
+
     if (scope === 'concept') {
       if (path[0] === 'brief') {
         this.#brief = value;
@@ -481,6 +492,10 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
       // Re-seeding is the point of picking a road map; name and rows survive.
       const seeded = seedFromRoadMap(value, draft.level);
       Object.assign(draft, seeded);
+      // ...but a creature holding spells still needs a tier to read their DC
+      // from, and most road maps seed none. Silently dropping the spell entry
+      // while its rows stay on screen is the worst of both.
+      if (!draft.spell && draft.contents.spells.length) draft.spell = 'moderate';
     } else if (key === 'level') draft.level = Number(value);
     else if (key === 'speed') draft.speed = Number(value) || 25;
     else if (key === 'traits') {
@@ -492,10 +507,18 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
       if (!strike) return;
       if (path[2] === 'kind') strike.kind = value ? 'ranged' : 'melee';
       else strike[path[2]] = value;
+    } else if (key === 'spellFreq') {
+      const spell = draft.contents.spells[Number(path[1])];
+      if (!spell) return;
+      Object.assign(spell, frequencyToUses(value));
     } else if (key === 'skill') {
       const skill = draft.skills[Number(path[1])];
       if (!skill) return;
       skill[path[2]] = value;
+    } else if (key === 'gearEntry') {
+      // Live text for the add-gear box: kept on the instance so the render
+      // this change triggers puts it back rather than blanking it.
+      this.#gearEntry = value;
     } else draft[key] = value;
 
     // Change fires on blur for text fields, so re-rendering here never steals
@@ -550,25 +573,49 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
       // The rewrite lands back on the parsed specials so later tier changes
       // keep it: the spec is recomputed from #parsed on every render.
       const byName = new Map(rewritten.specials.map((s) => [s.name, s.description]));
+      const applied = [];
       for (const special of this.#parsed.specials) {
         const clean = special.name.replace(/\s*\([^)]*\)\s*$/, '');
-        if (byName.has(clean)) special.description = byName.get(clean);
+        if (byName.has(clean)) {
+          special.description = byName.get(clean);
+          applied.push(clean);
+        }
+      }
+      // An ability translated into PF2e idiom (Pack Tactics becomes Pack
+      // Attack, Legendary Resistance gets a canned description) is rebuilt
+      // from mechanics5e on every conversion, so a rewrite of it would be
+      // silently thrown away. Say so rather than charging for nothing.
+      const ignored = [...byName.keys()].filter((name) => !applied.includes(name));
+      if (ignored.length) {
+        ui.notifications.info(
+          game.i18n.format('MCC.Import.RewriteSkipped', { list: ignored.join(', ') }),
+        );
       }
     });
   }
 
   static async #onCreateImport() {
     if (!this.#parsed) return;
-    await this.#createFromSpec(this.#importSpec(), 'mcc-art-import');
+    await this.#createFromSpec(this.#importSpec());
   }
 
   static async #onCreateBuilder() {
-    const spec = specFromBuilder(this.#builder);
     if (!this.#builder.name?.trim()) {
       ui.notifications.warn(game.i18n.localize('MCC.Builder.NameRequired'));
       return;
     }
-    await this.#createFromSpec(spec, 'mcc-art-builder');
+    // The selects constrain the vocabulary, but not the rules that are not
+    // vocabulary - three extreme statistics is reachable by hand, and the
+    // red text saying so was previously advisory only.
+    const { errors } = validateDraft(this.#builder);
+    if (errors.length) {
+      ui.notifications.error(
+        game.i18n.format('MCC.Rules.Blocked', { message: game.i18n.format(errors[0].message, errors[0].data) }),
+      );
+      return;
+    }
+    const spec = specFromBuilder(this.#builder);
+    await this.#createFromSpec(spec);
   }
 
   static #onAddStrike() {
@@ -651,13 +698,14 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
   /** Type a name to add gear without hunting for it in a compendium. */
   static #onAddGear() {
     const field = this.element?.querySelector('[data-bind="builder.gearEntry"]');
-    const names = String(field?.value ?? '').split(',').map((n) => n.trim()).filter(Boolean);
+    const names = String(this.#gearEntry ?? field?.value ?? '').split(',').map((n) => n.trim()).filter(Boolean);
     if (names.length === 0) return;
     for (const name of names) {
       const clean = name.toLowerCase();
       if (this.#builder.contents.gear.some((item) => item.name === clean)) continue;
       this.#builder.contents.gear.push({ bucket: 'gear', uuid: null, name: clean });
     }
+    this.#gearEntry = '';
     if (field) field.value = '';
     this.render();
   }
@@ -675,9 +723,8 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
     if (field) this.#importText = field.value;
   }
 
-  #wantArtwork(checkboxId) {
-    const box = this.element?.querySelector(`#${checkboxId}`);
-    return Boolean(box?.checked);
+  #wantArtwork() {
+    return this.#wantArt;
   }
 
   async #withBusy(kind, fn) {
@@ -701,14 +748,14 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
-  async #createFromSpec(spec, artCheckboxId) {
-    const wantArt = this.#wantArtwork(artCheckboxId);
+  async #createFromSpec(spec) {
+    const wantArt = this.#wantArtwork();
     if (wantArt && !hasApiKey()) {
       ui.notifications.error(game.i18n.localize('MCC.Errors.NoApiKey'));
       return;
     }
     await this.#withBusy('create', async (signal) => {
-      const actor = await createCreatureActor(spec);
+      const actor = await createCreatureActor(spec, { signal });
       ui.notifications.info(game.i18n.format('MCC.Create.Success', { name: actor.name, level: spec.level }));
 
       if (wantArt) {

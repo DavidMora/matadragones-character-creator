@@ -58,7 +58,7 @@ export const GEAR_MAP = {
   morningstar: 'morningstar',
   sickle: 'sickle',
   scimitar: 'scimitar',
-  'war pick': 'war flail',
+  'war pick': 'pick',
 };
 
 /** Things that are not gear even though they appear in an AC parenthetical. */
@@ -115,11 +115,22 @@ export async function compendiumGearFinder() {
   };
 }
 
-/** How a piece of gear is carried, by item type. */
-export function equippedState(type) {
-  return type === 'armor'
-    ? { carryType: 'worn', handsHeld: 0, inSlot: true, invested: null }
-    : { carryType: 'held', handsHeld: 1, invested: null };
+/**
+ * How a piece of gear is carried.
+ *
+ * `handsHeld` must match what the item's usage demands: pf2e's `isEquipped`
+ * compares it against `usage.hands`, so a maul or greatsword recorded as
+ * held in one hand reports itself unequipped. Real bestiary data agrees -
+ * the Ogre Warrior's Ogre Hook is stored with `handsHeld: 2`. Anything that
+ * is not held at all (a potion, a cloak) is worn or stowed, not gripped.
+ */
+const HELD_TYPES = new Set(['weapon', 'shield']);
+
+export function equippedState(type, usage) {
+  if (type === 'armor') return { carryType: 'worn', handsHeld: 0, inSlot: true, invested: null };
+  if (!HELD_TYPES.has(type)) return { carryType: 'worn', handsHeld: 0, invested: null };
+  const hands = usage?.value === 'held-in-two-hands' ? 2 : 1;
+  return { carryType: 'held', handsHeld: hands, invested: null };
 }
 
 /** A compendium source made ready to embed on the creature. */
@@ -128,7 +139,7 @@ export function gearSource(base) {
   delete source._id;
   delete source.folder;
   source.system.quantity = 1;
-  source.system.equipped = equippedState(source.type);
+  source.system.equipped = equippedState(source.type, source.system?.usage);
   return source;
 }
 

@@ -54,21 +54,32 @@ for (const [name, schema] of Object.entries(SCHEMAS)) {
  * `speed` and sense `range` are the deliberate exceptions - PF2e publishes no
  * table for either, so there is nothing for a number to contradict.
  */
-const NUMERIC_EXCEPTIONS = new Set(['concept.speed', 'concept.senses[].range']);
-const FORBIDDEN = /^(ac|hp|hitPoints|bonus|attackBonus|damage|dc|spellDC|save|saves|modifier|mod|level|rank|slots)$/i;
+/*
+ * An allowlist, not a denylist. The previous version matched forbidden names
+ * exactly, so `armorClass`, `hitPointTotal` and `strikeDamageDice` all
+ * slipped through - an audit added those three fields and the suite stayed
+ * green. Inverting it means a new numeric field fails until someone
+ * deliberately records why a model may supply it.
+ *
+ * The two allowed numbers are the ones PF2e publishes no table for, so there
+ * is nothing for them to contradict.
+ */
+const ALLOWED_NUMERIC = new Set([
+  'concept.speed',          // no Speed table exists in Building Creatures
+  'concept.senses[].range', // nor a table of sense ranges
+]);
 
 for (const [name, schema] of Object.entries(SCHEMAS)) {
+  // The transcription schema is the one place numbers are the point: it
+  // copies a printed stat block, and the conversion re-derives every value.
+  if (name === 'transcription') continue;
   for (const [path, node] of objects(schema, name)) {
     for (const [key, value] of Object.entries(node.properties)) {
       const full = `${path}.${key}`;
       const types = [value.type].flat();
-      const numeric = types.includes('integer') || types.includes('number');
-      if (!numeric || NUMERIC_EXCEPTIONS.has(full)) continue;
-      // The transcription schema is the one place numbers are the point: it
-      // copies a printed stat block, and the conversion re-derives every
-      // value afterwards.
-      if (name === 'transcription') continue;
-      check(`${full}: a model may not write a table-owned number`, FORBIDDEN.test(key), false);
+      if (!types.includes('integer') && !types.includes('number')) continue;
+      check(`${full}: a model may not supply a number the tables own`,
+        ALLOWED_NUMERIC.has(full), true);
     }
   }
 }

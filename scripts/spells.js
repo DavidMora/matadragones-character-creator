@@ -78,6 +78,18 @@ export function spellSource(base, entryId, spell) {
   }
   if (spell.constant) source.name = `${source.name} (Constant)`;
   else if (spell.atWill && !isCantrip) source.name = `${source.name} (At Will)`;
+
+  /*
+   * An innate spell is cast at a rank, and published creatures say which:
+   * a level 16 creature's innate fireball is heightened, not a rank 3 spell
+   * for 6d6. The rank a creature can reach is half its level rounded up,
+   * capped at 10 and never below the spell's own rank.
+   */
+  if (spell.heightenTo && !isCantrip) {
+    const own = Number(source.system?.level?.value) || 1;
+    const heightened = Math.min(Math.max(spell.heightenTo, own), 10);
+    if (heightened > own) source.system.location.heightenedLevel = heightened;
+  }
   return source;
 }
 
@@ -138,8 +150,14 @@ export async function attachSpellcasting(actor, spec, { findSpell, resolveUuid }
   let created = 0;
 
   for (const entry of entries) {
-    const [entryDoc] = await actor.createEmbeddedDocuments('Item', [entrySource(entry)]);
-    const entryId = entryDoc._id ?? entryDoc.id;
+    // Foundry returns fewer documents than asked for when a hook vetoes the
+    // creation, with no exception - so this is a real case, not paranoia.
+    const [entryDoc] = (await actor.createEmbeddedDocuments('Item', [entrySource(entry)])) ?? [];
+    const entryId = entryDoc?._id ?? entryDoc?.id;
+    if (!entryId) {
+      missing.push(...entry.spells.map((spell) => spell.name));
+      continue;
+    }
     const sources = [];
     for (const spell of entry.spells) {
       // A spell the GM dragged in is already the document they chose.

@@ -84,7 +84,8 @@
   {{#if parsed}}
     <footer class="mcc-footer">
       <label class="mcc-checkbox" data-tooltip="{{localize 'MCC.Create.ArtHint'}}">
-        <input type="checkbox" id="mcc-art-import" {{#unless hasApiKey}}disabled{{/unless}}>
+        <input type="checkbox" id="mcc-art-import" data-bind="art.want"
+               {{#if wantArt}}checked{{/if}} {{#unless hasApiKey}}disabled{{/unless}}>
         {{localize 'MCC.Create.ArtLabel'}}
       </label>
       {{#if busyCreate}}

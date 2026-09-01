@@ -68,8 +68,14 @@ check('melee strike has null range', melee[0].system.range, null);
 check('ranged strike carries range schema', melee[1].system.range, { increment: 30, max: 120 });
 check('no range traits (legacy shape)', melee[1].system.traits.value.some((t) => t.startsWith('range')), false);
 
-const lore = data.items.filter((i) => i.type === 'lore');
-check('skills become lore items', lore.map((i) => [i.name, i.system.mod.value]), [['Athletics', 15]]);
+/*
+ * Skills are actor data, not items - a lore item named "Athletics" registers
+ * as `athletics-lore` and leaves the real skill untrained, so the sheet reads
+ * right while every Grapple, Trip and @Check rolls the bare ability modifier.
+ */
+check('skills live on the actor keyed by slug', data.system.skills, { athletics: { base: 15 } });
+check('no lore items are emitted for core skills',
+  data.items.filter((i) => i.type === 'lore').length, 0);
 
 const actions = data.items.filter((i) => i.type === 'action');
 check('specials plus spellcasting note', actions.map((a) => a.name), ['Frozen Breath', 'Ice Shield', 'Spellcasting']);
@@ -90,7 +96,9 @@ check('source note lands in public notes',
 // End to end: a parsed fixture converts and builds a payload without throwing,
 // and every item type is one pf2e defines for NPCs.
 const endToEnd = actorDataFromSpec(convertCreature(parse5eStatBlock(FROST_REAVER).data));
-check('fixture end-to-end item types', [...new Set(endToEnd.items.map((i) => i.type))].sort(), ['action', 'lore', 'melee']);
+check('fixture end-to-end item types', [...new Set(endToEnd.items.map((i) => i.type))].sort(), ['action', 'melee']);
+check('fixture end-to-end skills are actor data',
+  Object.keys(endToEnd.system.skills).sort(), ['athletics', 'stealth']);
 check('fixture end-to-end level', endToEnd.system.details.level.value, 9);
 
 // --- Spellcasting realisation ------------------------------------------------

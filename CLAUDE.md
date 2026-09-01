@@ -59,8 +59,16 @@ apply here too.
   here)". Both shapes were read off the pathfinder-monster-core pack.
 - **The OpenAI key stays client-scoped.** World settings are readable by every
   player regardless of `restricted`.
+- **NPC skills are actor data, not items.** `system.skills.<slug>.base`.
+  Emitting a `lore` item named "Athletics" renders a plausible number on the
+  sheet while `getStatistic('athletics')` returns an untrained skill worth
+  the bare ability modifier - so Grapple, Trip, `@Check` links and every
+  skill macro roll ~10 points low. This module shipped that bug because
+  "verified against the system source" meant reading `template.json` and
+  seeing that `lore` items exist, rather than looking at what real NPCs
+  store. Check the packs, not just the schema.
 - **pf2e schemas were verified against the system source** (v7.12/v8.4):
-  NPC skills are `lore` items (`system.mod.value`), strikes are `melee` items
+  strikes are `melee` items
   with a `damageRolls` record and nullable `range` (range traits are legacy),
   abilities are `action` items. Perception is `system.perception.mod`
   (remaster). Re-verify in the bundle at
@@ -116,8 +124,20 @@ dangling import shows up in Foundry as a silently inactive module.
 handler and every `data-bind` scope is routed.
 
 **A green suite proves nothing on its own** - break the code and watch it
-fail. Doing that here found the orphan-DC substitution had no coverage
-(a mutation survived); assume more of those exist before trusting a new test.
+fail. An adversarial audit ran 136 mutations against a 590-check suite and
+**82 survived**, because the suite tested *wiring* (a value flows from A to
+B) and not *content* (the value is right). The tell:
+`check('AC from table', spec.ac.value, tables.acFor(9, 'moderate'))` asks
+`convert.js` and `tables.js` the same question and checks they agree - it can
+never notice the table is wrong.
+
+The fix is literal expected values from an independent source: the golden
+fixture in `test/tables-golden.json` pins every published number,
+`check-actor.mjs` uses a hand-written spec with literal results, and the
+vocabulary maps and `GEAR_MAP` are asserted entry by entry rather than
+"resolves to something". When you add a table, a threshold or a mapping, ask
+what literal a reviewer could check it against - and if the answer is "the
+code", the test is worthless.
 When a test fails, check the assertion before the code: the wisp DPR fixture
 was wrong once already (printed averages, not dice means).
 

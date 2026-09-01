@@ -148,6 +148,23 @@ export const LANGUAGE_MAP = {
   undercommon: ['sakvroth'],
 };
 
+/*
+ * The AI path is told to speak remaster, so a compliant model writes
+ * `chthonian` or `sakvroth` - names the 5e-keyed map above does not contain,
+ * which sent every correct answer into the free-text details field. Each
+ * valid pf2e language therefore maps to itself.
+ */
+export const PF2E_LANGUAGES = [
+  'common', 'chthonian', 'aklo', 'thalassic', 'sussuran', 'empyrean', 'daemonic',
+  'draconic', 'wildsong', 'dwarven', 'elven', 'fey', 'gnomish', 'goblin', 'halfling',
+  'jotun', 'kholo', 'necril', 'orcish', 'petran', 'protean', 'pyric', 'sakvroth',
+  'diabolic', 'taldane', 'mwangi', 'osiriani', 'kelish', 'tien', 'ysoki', 'shoanti',
+  'varisian', 'vudrani', 'hallit', 'skald', 'utopian', 'requian', 'shadowtongue',
+  'amurrun', 'iruxi', 'tengu', 'nagaji', 'vanara', 'sphinx', 'caligni', 'boggard',
+  'grippli', 'arboreal', 'alghollthu', 'cyclops', 'muan', 'ocotan', 'adlet', 'calda',
+];
+for (const slug of PF2E_LANGUAGES) LANGUAGE_MAP[slug] ??= [slug];
+
 /** Split printed languages into valid slugs and a verbatim details string. */
 export function mapLanguages(entries = []) {
   const value = [];
@@ -168,6 +185,16 @@ const SENSE_MAP = {
   blindsight: { type: 'echolocation', acuity: 'precise' },
   tremorsense: { type: 'tremorsense', acuity: 'imprecise' },
   truesight: { type: 'truesight', acuity: 'precise' },
+};
+
+/** 5e subtype words that name a real pf2e creature trait. */
+export const SUBTYPE_TRAITS = {
+  demon: 'demon', devil: 'devil', angel: 'angel', titan: 'titan', archon: 'archon',
+  daemon: 'daemon', azata: 'azata', shapechanger: 'werecreature', lycanthrope: 'werecreature',
+  goblinoid: 'goblin', elf: 'elf', dwarf: 'dwarf', gnome: 'gnome', halfling: 'halfling',
+  human: 'human', orc: 'orc', goblin: 'goblin', kobold: 'kobold', gnoll: 'kholo',
+  swarm: 'swarm', mindless: 'mindless', incorporeal: 'incorporeal', amphibious: 'amphibious',
+  aquatic: 'aquatic',
 };
 
 const SAVE_ABILITY = { str: 'fortitude', con: 'fortitude', dex: 'reflex', int: 'will', wis: 'will', cha: 'will' };
@@ -315,7 +342,12 @@ export function convertCreature(data, { level: levelOverride, tiers: tierOverrid
   if (mappedType) traits.push(mappedType);
   if (data.subtype) {
     for (const part of data.subtype.split(/[,/]/).map((s) => s.trim())) {
-      if (/^(demon|devil|angel|goblinoid|shapechanger|titan)s?$/.test(part)) traits.push(part.replace(/s$/, ''));
+      // Verified against CONFIG.PF2E.creatureTraits: the remaster has no
+      // `shapechanger` (it is `werecreature`) and no `goblinoid` at all, so
+      // emitting either produced a raw un-localised chip that no automation
+      // or IWR rule could ever match.
+      const mapped = SUBTYPE_TRAITS[part.replace(/s$/, '').toLowerCase()];
+      if (mapped && !traits.includes(mapped)) traits.push(mapped);
     }
   }
 
@@ -431,6 +463,7 @@ function buildSpellcasting(data, level, tiers) {
           uses: group.kind === 'per-day' ? group.uses : null,
           atWill: group.kind === 'at-will',
           constant: group.kind === 'constant',
+          heightenTo: maxSpellRank(level),
         });
       }
     }
@@ -485,7 +518,15 @@ function mapTypedList(entries = []) {
  * is the primary and uses the classified damage tier; the rest sit one tier
  * below, which is how the book advises statting secondary attacks.
  */
-const LOWER_TIER = { extreme: 'high', high: 'moderate', moderate: 'low', low: 'low' };
+/** Strikes made with a body part rather than a weapon. */
+const NATURAL_STRIKE = new RegExp(
+  '^(bite|claw|claws|slam|tail|tentacle|tentacles|sting|gore|hoof|hooves|talon|talons|'
+  + 'fist|pincer|pseudopod|horn|beak|wing|tongue|spine|quill|stomp|maw|jaws|fangs|'
+  + 'proboscis|barb|hook|rend|touch|ram)\\b',
+  'i',
+);
+
+export const LOWER_TIER = { extreme: 'high', high: 'moderate', moderate: 'low', low: 'low' };
 
 function buildStrikes(data, level, tiers) {
   const attacks = [...(data.attacks ?? [])];
@@ -501,11 +542,26 @@ function buildStrikes(data, level, tiers) {
     const { dice } = strikeDamageFor(level, damageTier);
     const first = attack.damage[0];
     const damageType = (first && mapDamageType(first.type)) ?? 'bludgeoning';
+    /*
+     * Rider damage kept its printed dice, which was the one number that
+     * survived an import - contradicting the rule the rest of this file
+     * exists to enforce. The type is what carries the flavour (a cold bite
+     * is a cold bite); the size comes from the level, using the module's
+     * rider convention rather than the source's arithmetic.
+     */
     const extra = attack.damage.slice(1)
-      .map((d) => ({ dice: d.dice, type: mapDamageType(d.type) }))
-      .filter((d) => d.type && /d/.test(d.dice));
+      .map((d) => ({ dice: riderDice(level), type: mapDamageType(d.type) }))
+      .filter((d) => d.type);
     const traits = [];
-    if (attack.kind === 'melee' && attack.reach && attack.reach > 5) traits.push(`reach-${Math.min(attack.reach, 30)}`);
+    // Published creatures mark body-part Strikes `unarmed`, which is what
+    // unarmed-attack IWR and rules elements key off.
+    if (NATURAL_STRIKE.test(attack.name)) traits.push('unarmed');
+    if (attack.kind === 'melee' && attack.reach && attack.reach > 5) {
+      // Reach traits are a fixed vocabulary in multiples of five; a stray
+      // value is spliced out of the array silently by the system.
+      const reach = Math.min(Math.round(attack.reach / 5) * 5, 30);
+      if (reach > 5) traits.push(`reach-${reach}`);
+    }
     // Rider effects written as prose in the source become pf2e attack effects,
     // which is how the sheet advertises Grab and friends beside the strike.
     const attackEffects = [];
@@ -528,11 +584,32 @@ function buildStrikes(data, level, tiers) {
   });
 }
 
+/**
+ * Extra damage riders, scaled by level.
+ *
+ * PF2e publishes no rider table, so this is the module's own convention,
+ * chosen to sit near what published creatures carry alongside a Strike
+ * rather than to reproduce a printed value.
+ */
+export function riderDice(level) {
+  if (level < 4) return '1d6';
+  if (level < 9) return '2d6';
+  if (level < 15) return '3d6';
+  if (level < 19) return '4d6';
+  return '5d6';
+}
+
 /** pf2e's melee-item range field accepts 5-500 in steps of 5. */
 function clampRange(value) {
   if (!value) return null;
   return Math.min(Math.max(Math.round(value / 5) * 5, 5), 500);
 }
+
+/**
+ * The highest spell rank a creature of this level casts: half its level
+ * rounded up, the convention published creatures follow.
+ */
+export const maxSpellRank = (level) => Math.min(Math.max(Math.ceil(level / 2), 1), 10);
 
 /** The skill each casting tradition trains, per PF2e convention. */
 const TRADITION_SKILL = { arcane: 'arcana', divine: 'religion', occult: 'occultism', primal: 'nature' };
@@ -618,7 +695,9 @@ function buildSpecials(data, textContext) {
     const recharge = translateRecharge(name);
     if (recharge) {
       name = recharge.name;
-      description += recharge.sentence;
+      // Conversion runs again every time the GM changes a tier or rewrites
+      // the prose, so appending unconditionally stacks the sentence.
+      if (!description.includes(recharge.sentence.trim())) description += recharge.sentence;
     }
     if (LEGENDARY_SECTIONS.has(special.section)) {
       description = legendaryTriggerPrefix(description);
@@ -660,6 +739,7 @@ function builderSpellcasting(draft, level, contents) {
     uses: spell.uses ?? null,
     atWill: Boolean(spell.atWill),
     constant: Boolean(spell.constant),
+    heightenTo: maxSpellRank(level),
   }));
   if (spells.length === 0 || !draft.spell) return null;
 
@@ -690,6 +770,22 @@ function builderSpellcasting(draft, level, contents) {
       spells: unique,
     }],
   };
+}
+
+/**
+ * One entry per item. A dropped item and a typed name for the same thing are
+ * still one item, and the entry carrying a uuid wins - it names the exact
+ * document the GM chose.
+ */
+export function dedupeGear(entries) {
+  const byName = new Map();
+  for (const entry of entries) {
+    const key = entry.name.toLowerCase();
+    const existing = byName.get(key);
+    if (!existing) byName.set(key, entry);
+    else if (!existing.uuid && entry.uuid) byName.set(key, entry);
+  }
+  return [...byName.values()];
 }
 
 /** Seed a builder draft from a road map. */
@@ -774,16 +870,17 @@ export function specFromBuilder(draft) {
     // creature's hands, same rule as the importer: descriptive, never
     // feeding back into the numbers. Dropped gear keeps its uuid so creation
     // clones the exact item the GM dragged in.
-    equipment: [
-      // A strike named for a real weapon still puts that weapon in the
-      // creature's hands, on top of whatever is listed.
+    // A strike named for a real weapon puts that weapon in the creature's
+    // hands, on top of whatever is listed - deduped, since a concept that
+    // proposes a Staff strike and a staff in its gear means one staff.
+    equipment: dedupeGear([
       ...gearFromParsed({
         acNote: '',
         gearLine: '',
         attacks: (draft.strikes ?? []).map((s) => ({ name: s.name ?? '' })),
       }).map((name) => ({ name, uuid: null })),
       ...contents.gear.map((item) => ({ name: item.name, uuid: item.uuid ?? null })),
-    ],
+    ]),
     specials: contents.specials.map((special) => (
       // A dropped document is cloned as it is; written text gets the same DC
       // anchoring imported abilities get.

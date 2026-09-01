@@ -252,7 +252,7 @@
             {{/each}}
           </ul>
           <div class="mcc-row mcc-gear-add">
-            <input type="text" data-bind="builder.gearEntry"
+            <input type="text" data-bind="builder.gearEntry" value="{{builder.gearEntry}}"
                    placeholder="{{localize 'MCC.Drop.GearPlaceholder'}}" {{#if busy}}disabled{{/if}}>
             <button type="button" data-action="addGear" {{#if busy}}disabled{{/if}}>
               <i class="fa-solid fa-plus"></i> {{localize 'MCC.Drop.AddGear'}}
@@ -283,7 +283,8 @@
 
   <footer class="mcc-footer">
     <label class="mcc-checkbox" data-tooltip="{{localize 'MCC.Create.ArtHint'}}">
-      <input type="checkbox" id="mcc-art-builder" {{#unless hasApiKey}}disabled{{/unless}}>
+      <input type="checkbox" id="mcc-art-builder" data-bind="art.want"
+               {{#if wantArt}}checked{{/if}} {{#unless hasApiKey}}disabled{{/unless}}>
       {{localize 'MCC.Create.ArtLabel'}}
     </label>
     {{#if busyCreate}}

@@ -60,15 +60,6 @@ export function actorDataFromSpec(spec) {
     });
   }
 
-  for (const skill of spec.skills) {
-    items.push({
-      name: skill.name,
-      type: 'lore',
-      img: 'systems/pf2e/icons/default-icons/lore.svg',
-      system: { mod: { value: skill.mod }, description: { value: '' } },
-    });
-  }
-
   for (const special of spec.specials ?? []) {
     // Dropped items are cloned wholesale after creation, so they are not
     // rebuilt as actions here.
@@ -121,6 +112,21 @@ export function actorDataFromSpec(spec) {
     type: 'npc',
     img: 'systems/pf2e/icons/default-icons/npc.svg',
     system: {
+      /*
+       * Skills live on the actor, not in items.
+       *
+       * This was wrong for a long time: the module emitted one `lore` item
+       * per skill, which renders a plausible-looking number on the sheet but
+       * registers under `athletics-lore`, leaving the real `athletics`
+       * statistic untrained and worth only the Strength modifier. Every
+       * Grapple, Trip, @Check link and skill macro then rolled ~10 points
+       * low. Verified against pathfinder-monster-core: 492 of 492 NPCs store
+       * `system.skills.<slug>.base`, and every `lore` item in the pack is a
+       * genuine Lore subject ("Boneyard Lore"), never a core skill.
+       */
+      skills: Object.fromEntries(
+        (spec.skills ?? []).map((skill) => [skill.slug, { base: skill.mod }]),
+      ),
       abilities: Object.fromEntries(
         Object.entries(spec.abilities).map(([key, mod]) => [key, { mod }]),
       ),
@@ -171,13 +177,22 @@ export function actorDataFromSpec(spec) {
 const signed = (n) => (n >= 0 ? `+${n}` : `${n}`);
 
 /** Create the actor, then realise its spellcasting from the compendium. */
-export async function createCreatureActor(spec) {
+export async function createCreatureActor(spec, { signal } = {}) {
   const data = actorDataFromSpec(spec);
   const actor = await Actor.implementation.create(data);
   if (!actor) throw new Error(game.i18n.localize('MCC.Errors.ActorCreateFailed'));
 
+  // Resolving compendia can take seconds on a cold pack, which is exactly
+  // when a GM reaches for Cancel; check between steps rather than pretending
+  // the button works.
+  const stop = () => {
+    if (signal?.aborted) throw Object.assign(new Error('cancelled'), { name: 'AbortError' });
+  };
+
   const { created, missing } = await attachSpellcasting(actor, spec);
+  stop();
   const gear = await attachGear(actor, spec);
+  stop();
   await attachDroppedSpecials(actor, spec);
   if (missing.length) {
     // The GM gets the unmatched names on the sheet itself, where the creature
