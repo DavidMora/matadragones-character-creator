@@ -6,7 +6,9 @@
  * cannot be trusted to know the list, so it lives here as data and is applied
  * deterministically - including over the AI's output.
  *
- * The list is the official one from the pf2e system wiki (Remaster-Changes),
+ * The list is the pf2e system's own Remaster Changes journal (packs/pf2e/
+ * journals/remaster-changes.json, which supersedes the wiki page and fixed
+ * its swapped dimensional anchor/lock rows),
  * merged with a curated set of 5th-edition names whose PF2e counterpart is
  * unambiguous (charm person is charm, cure wounds is heal), then validated
  * against the system's spells compendium with two rules enforced by
@@ -40,13 +42,14 @@ export const SPELL_RENAMES = {
   "dancing lights": "light",
   "detect thoughts": "mind reading",
   "dimension door": "translocate",
-  "dimensional anchor": "planar seal",
-  "dimensional lock": "planar tether",
+  "dimensional anchor": "planar tether",
+  "dimensional lock": "planar seal",
   "discern location": "pinpoint",
   "disguise self": "illusory disguise",
   "disrupt undead": "vitality lash",
   "disrupting weapons": "infuse vitality",
   "dragon claws": "flurry of claws",
+  "efficient apport": "reclined apport",
   "empty body": "embrace nothingness",
   "endure elements": "environmental endurance",
   "entangle": "entangling flora",
@@ -66,6 +69,8 @@ export const SPELL_RENAMES = {
   "glitterdust": "revealing light",
   "globe of invulnerability": "dispelling globe",
   "glutton's jaw": "glutton's jaws",
+  "glyph of warding": "rune trap",
+  "goodberry": "cornucopia",
   "greater invisibility": "invisibility",
   "greater restoration": "restoration",
   "hallucinatory terrain": "mirage",
@@ -73,6 +78,7 @@ export const SPELL_RENAMES = {
   "hideous laughter": "laughing fit",
   "hold person": "paralyze",
   "horrid wilting": "desiccate",
+  "hyperfocus": "clouded focus",
   "hypnotic pattern": "hypnotize",
   "inflict wounds": "harm",
   "inspire competence": "uplifting overture",
@@ -124,8 +130,10 @@ export const SPELL_RENAMES = {
   "remove disease": "cleanse affliction",
   "remove fear": "clear mind",
   "remove paralysis": "sure footing",
+  "resilient sphere": "containment",
   "restore senses": "sound body",
   "righteous might": "sacred form",
+  "roar of the wyrm": "roar of the dragon",
   "sanctified ground": "anointed ground",
   "scintillating pattern": "confusing colors",
   "scorching ray": "blazing bolt",
@@ -144,6 +152,7 @@ export const SPELL_RENAMES = {
   "tanglefoot": "tangle vine",
   "time stop": "freeze time",
   "tongues": "truespeech",
+  "touch of corruption": "touch of the void",
   "touch of idiocy": "stupefy",
   "tree shape": "one with plants",
   "tree stride": "nature's pathway",
