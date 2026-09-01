@@ -149,8 +149,11 @@ const builderHtml = shell({ ...context, isImport: false, isBuilder: true });
 // lives in the template, the default lives on the instance.
 check('Build from Scratch is the first tab in the nav',
   importHtml.indexOf('data-tab="builder"') < importHtml.indexOf('data-tab="import"'), true);
+// Anchored to the field declaration: an unanchored match also hits
+// `this.#tab = 'builder'` in the concept handler, so the check passed with
+// the default reverted - caught by mutating it.
 check('a fresh window opens on the builder',
-  /#tab = 'builder';/.test(viewSource), true);
+  /^ {2}#tab = 'builder';$/m.test(viewSource), true);
 check('an unknown tab falls back to the builder, not the importer',
   /target\.dataset\.tab === 'import' \? 'import' : 'builder'/.test(viewSource), true);
 
