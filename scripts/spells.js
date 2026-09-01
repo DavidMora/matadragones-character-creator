@@ -81,6 +81,19 @@ export function spellSource(base, entryId, spell) {
   return source;
 }
 
+/** Slot counts per rank, counted from the spells that resolved. */
+export function slotsForSources(sources) {
+  const slots = {};
+  for (const source of sources) {
+    const isCantrip = source.system?.traits?.value?.includes('cantrip');
+    const rank = isCantrip ? 0 : Math.min(Math.max(Number(source.system?.level?.value) || 1, 1), 10);
+    const key = `slot${rank}`;
+    const count = (slots[key]?.max ?? 0) + 1;
+    slots[key] = { value: count, max: count, prepared: [] };
+  }
+  return slots;
+}
+
 /**
  * Create the entries and their spells on an existing actor.
  *
@@ -117,6 +130,15 @@ export async function attachSpellcasting(actor, spec, { findSpell, resolveUuid }
     if (sources.length) {
       await actor.createEmbeddedDocuments('Item', sources);
       created += sources.length;
+      // A prepared or spontaneous entry needs slots, and the honest number is
+      // however many spells of each rank actually landed - which is only
+      // known once they have resolved.
+      if (entry.slotsFromSpells) {
+        await actor.updateEmbeddedDocuments('Item', [{
+          _id: entryId,
+          system: { slots: slotsForSources(sources) },
+        }]);
+      }
     }
   }
   return { created, missing };

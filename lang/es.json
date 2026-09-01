@@ -226,7 +226,9 @@
       "Ready": "Concepto listo: {name} (nivel {level}). Revísalo y ajústalo antes de crear.",
       "Corrected": "{count} valor(es) quedaban fuera de las reglas de creación y se corrigieron.",
       "BudgetLine": "Vale {xp} PX para este grupo: {threat} en solitario; caben unas {count} en un encuentro moderado ({budget} PX).",
-      "BudgetTooltip": "De las tablas publicadas de creación de encuentros: una criatura cuesta PX según su nivel relativo al del grupo, y un grupo de N tiene un presupuesto moderado de 20xN PX."
+      "BudgetTooltip": "De las tablas publicadas de creación de encuentros: una criatura cuesta PX según su nivel relativo al del grupo, y un grupo de N tiene un presupuesto moderado de 20xN PX.",
+      "RetryingSpells": "El concepto volvió sin lista de conjuros: se pide una vez más.",
+      "NoSpells": "El modelo propuso un lanzador de conjuros sin lista; añade conjuros arrastrándolos."
     },
     "Role": {
       "Solo": "Jefe en solitario (grupo +3)",

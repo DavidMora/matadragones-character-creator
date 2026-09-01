@@ -674,15 +674,22 @@ function builderSpellcasting(draft, level, drops) {
     return true;
   });
 
+  // A wizard is a prepared caster, not a monster with innate powers; the
+  // concept says which, and slots are filled in from the ranks of the spells
+  // that actually resolve (see spells.js) rather than guessed here.
+  const category = ['innate', 'prepared', 'spontaneous'].includes(draft.castingCategory)
+    ? draft.castingCategory
+    : 'innate';
   return {
     entries: [{
-      name: 'Innate Spellcasting',
-      category: 'innate',
+      name: category === 'innate' ? 'Innate Spellcasting' : 'Spellcasting',
+      category,
       tradition: draft.tradition ?? 'arcane',
       ability: 'cha',
       dc: spellDCFor(level, draft.spell),
       attack: spellAttackFor(level, draft.spell),
       slots: {},
+      slotsFromSpells: category !== 'innate',
       spells: unique,
     }],
   };

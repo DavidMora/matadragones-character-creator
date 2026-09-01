@@ -118,9 +118,16 @@ const CONCEPT_SCHEMA = {
     spellcasting: {
       type: ['object', 'null'],
       additionalProperties: false,
-      required: ['tradition', 'spells'],
+      required: ['tradition', 'category', 'spells'],
       properties: {
         tradition: { type: 'string', enum: ['arcane', 'divine', 'occult', 'primal'] },
+        category: {
+          type: 'string',
+          enum: ['innate', 'prepared', 'spontaneous'],
+          description:
+            'How it casts: innate for monsters with a few inherent powers, prepared for wizards '
+            + 'and clerics, spontaneous for sorcerers and bards.',
+        },
         spells: {
           type: 'array',
           items: {
@@ -134,7 +141,10 @@ const CONCEPT_SCHEMA = {
           },
         },
       },
-      description: 'Null unless the creature casts. Ranks and DCs are computed, so do not state them.',
+      description:
+        'REQUIRED whenever the spell tier is not null: a creature that casts must list 4 to 8 real '
+        + 'spells here. Never put spells in specials. Ranks, slots and DCs are computed from the '
+        + 'creature\'s level, so do not state them.',
     },
     specials: {
       type: 'array',
@@ -168,6 +178,9 @@ const SYSTEM_PROMPT = [
   'with low or terrible ones - a creature strong at everything is a badly built creature.',
   'Use remaster vocabulary throughout: no alignment traits, no spell schools, vitality and void instead of positive and negative.',
   'Ability descriptions should read like published PF2e abilities: triggers, basic saves, degrees of success.',
+  'If the creature casts spells at all, you MUST fill the spellcasting object with four to eight real',
+  'Pathfinder spells that fit the concept, and you must NOT list spells as specials - specials are',
+  'non-spell abilities. A spell tier with an empty spell list is an invalid answer.',
 ].join(' ');
 
 /**
@@ -185,14 +198,34 @@ export async function generateConcept({ brief, level, role, partyLevel, partySiz
     outputLanguage ? `Write the name, description and ability text in ${outputLanguage}.` : '',
   ].filter(Boolean).join('\n');
 
-  const concept = await requestStructured({
+  const ask = (extra) => requestStructured({
     schemaName: 'creature_concept',
     schema: CONCEPT_SCHEMA,
     system: SYSTEM_PROMPT,
-    user,
+    user: extra ? `${user}\n${extra}` : user,
     signal,
   });
+
+  const concept = await ask();
+  // A caster with no spell list is the one failure worth paying for again:
+  // the module cannot invent the list, and a spellcaster without spells is
+  // not the creature the GM asked for.
+  if (needsSpells(concept)) {
+    ui.notifications?.info(game.i18n.localize('MCC.Concept.RetryingSpells'));
+    const second = await ask(
+      'Your previous answer gave this creature a spell tier but no spells. Return the same creature '
+      + 'with the spellcasting object filled in: pick a tradition, a casting category, and four to '
+      + 'eight real Pathfinder spells that fit the concept.',
+    );
+    if (!needsSpells(second)) return second;
+    return second;
+  }
   return concept;
+}
+
+/** A creature the model called a caster but gave nothing to cast. */
+export function needsSpells(concept) {
+  return Boolean(concept?.tiers?.spell) && !(concept?.spellcasting?.spells?.length);
 }
 
 /**
@@ -233,6 +266,7 @@ export function conceptToDraft(concept, level) {
     })),
     languages: (concept.languages ?? []).map((l) => String(l).toLowerCase().trim()).filter(Boolean),
     tradition: concept.spellcasting?.tradition ?? null,
+    castingCategory: concept.spellcasting?.category ?? 'innate',
     gear: '',
     drops: { spells: [], specials: [], gear: [], strikes: [] },
     conceptSpells: (concept.spellcasting?.spells ?? []).map((spell) => ({

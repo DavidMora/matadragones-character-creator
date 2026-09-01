@@ -590,6 +590,9 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
           game.i18n.format('MCC.Concept.Corrected', { count: corrections.length }),
         );
       }
+      if (draft.spell && !draft.conceptSpells.length) {
+        ui.notifications.warn(game.i18n.localize('MCC.Concept.NoSpells'));
+      }
       ui.notifications.info(game.i18n.format('MCC.Concept.Ready', { name: draft.name, level }));
     });
   }

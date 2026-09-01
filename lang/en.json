@@ -226,7 +226,9 @@
       "Ready": "Concept ready: {name} (level {level}). Review and adjust before creating.",
       "Corrected": "{count} value(s) were outside the creature-building rules and were corrected.",
       "BudgetLine": "Worth {xp} XP against this party — {threat} on its own; about {count} fit a moderate encounter ({budget} XP).",
-      "BudgetTooltip": "From the published encounter-building tables: a creature costs XP by its level relative to the party, and a party of N has a moderate budget of 20xN XP."
+      "BudgetTooltip": "From the published encounter-building tables: a creature costs XP by its level relative to the party, and a party of N has a moderate budget of 20xN XP.",
+      "RetryingSpells": "The concept came back with no spell list — asking once more for the spells.",
+      "NoSpells": "The model proposed a spellcaster but no spell list; add spells by dragging them in."
     },
     "Role": {
       "Solo": "Solo boss (party +3)",

@@ -175,6 +175,7 @@ const concept = {
   languages: ['Common', 'Necril'],
   spellcasting: {
     tradition: 'divine',
+    category: 'prepared',
     spells: [
       { name: 'animate dead', frequency: '2-per-day' },
       { name: 'chill touch', frequency: 'at-will' },
@@ -209,5 +210,35 @@ check('concept strikes are statted from the tables',
   [conceptSpec.strikes[0].bonus, conceptSpec.strikes[0].damage],
   [tables.strikeBonusFor(7, conceptDraft.attack), tables.strikeDamageFor(7, conceptDraft.damage).dice]);
 check('concept languages mapped to slugs', conceptSpec.languages, ['common', 'necril']);
+
+// --- A caster must actually get spells ---------------------------------------
+const { needsSpells } = await load('ai/concept.js');
+check('a spell tier with no list is the failure worth retrying',
+  needsSpells({ tiers: { spell: 'high' }, spellcasting: null }), true);
+check('a spell tier with an empty list counts too',
+  needsSpells({ tiers: { spell: 'high' }, spellcasting: { spells: [] } }), true);
+check('a non-caster needs nothing', needsSpells({ tiers: { spell: null }, spellcasting: null }), false);
+check('a caster with spells is fine',
+  needsSpells({ tiers: { spell: 'high' }, spellcasting: { spells: [{ name: 'acid grip' }] } }), false);
+
+// A wizard is a prepared caster, and its entry says so.
+const wizardSpec = specFromBuilder(conceptDraft);
+check('the concept chooses how it casts', [
+  wizardSpec.spellcasting.entries[0].category,
+  wizardSpec.spellcasting.entries[0].name,
+], ['prepared', 'Spellcasting']);
+check('a prepared entry asks for slots from its spells',
+  wizardSpec.spellcasting.entries[0].slotsFromSpells, true);
+
+// Slots are counted from the ranks that actually resolved, cantrips at 0.
+const { slotsForSources } = await load('spells.js');
+check('slots counted per rank', slotsForSources([
+  { system: { level: { value: 1 }, traits: { value: ['cantrip'] } } },
+  { system: { level: { value: 3 }, traits: { value: [] } } },
+  { system: { level: { value: 3 }, traits: { value: [] } } },
+]), {
+  slot0: { value: 1, max: 1, prepared: [] },
+  slot3: { value: 2, max: 2, prepared: [] },
+});
 
 done('the builder path is rules-bound end to end');
