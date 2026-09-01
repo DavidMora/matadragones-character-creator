@@ -1,0 +1,208 @@
+{
+  "MCC": {
+    "View": {
+      "Title": "Character Creator"
+    },
+    "Tab": {
+      "Import": "Import a Stat Block",
+      "Builder": "Build from Scratch"
+    },
+    "Tier": {
+      "extreme": "Extreme",
+      "high": "High",
+      "moderate": "Moderate",
+      "low": "Low",
+      "terrible": "Terrible",
+      "none": "None"
+    },
+    "Stat": {
+      "Perception": "Perception",
+      "AC": "AC",
+      "Fort": "Fort",
+      "Ref": "Ref",
+      "Will": "Will",
+      "HP": "HP",
+      "Attack": "Strike attack",
+      "Damage": "Strike damage",
+      "SpellDC": "Spell DC"
+    },
+    "RoadMap": {
+      "Balanced": "Balanced",
+      "Brute": "Brute",
+      "Sniper": "Sniper",
+      "Skirmisher": "Skirmisher",
+      "Soldier": "Soldier",
+      "MagicalStriker": "Magical striker",
+      "Spellcaster": "Spellcaster"
+    },
+    "Size": {
+      "Tiny": "Tiny",
+      "Small": "Small",
+      "Medium": "Medium",
+      "Large": "Large",
+      "Huge": "Huge",
+      "Gargantuan": "Gargantuan"
+    },
+    "Rarity": {
+      "Common": "Common",
+      "Uncommon": "Uncommon",
+      "Rare": "Rare",
+      "Unique": "Unique"
+    },
+    "Import": {
+      "PasteHeading": "Stat block",
+      "PasteTooltip": "Paste a monster stat block from the world's oldest roleplaying game (5th edition), 2014 or 2024 layout. Parsing is deterministic and happens entirely on your machine; the AI button is a fallback for pastes the parser cannot read.",
+      "PastePlaceholder": "Paste the full stat block here, from the name line down to the last action…",
+      "Parse": "Parse stat block",
+      "AiParse": "Parse with AI",
+      "AiParseHint": "Sends the pasted text to OpenAI for transcription into the same structure the parser produces. The conversion maths afterwards is identical - the model cannot set a single stat.",
+      "ViaAI": "transcribed by AI",
+      "NothingParsed": "Nothing to parse - paste a stat block first.",
+      "ParsedSummary": "Parsed {name} ({type}, CR {cr}): {attacks} attack(s), {specials} abilities.",
+      "MissingField": "Could not find: {field}. Fill the gap by hand after creating, or try Parse with AI.",
+      "TuneHeading": "Conversion",
+      "TuneTooltip": "Each stat was classified against what a creature of that CR is expected to have, and the value comes from the Building Creatures table for the target level. Change a tier to overrule the classification; the marked option is the classifier's suggestion.",
+      "TargetLevel": "Target level",
+      "DefaultMark": "•",
+      "EmptyPreview": "Parse a stat block to see the converted creature here.",
+      "Rewrite": "Rewrite abilities in PF2e style",
+      "RewriteHint": "Optional: sends ability prose to OpenAI to be rephrased in PF2e idiom. DCs and saves are recomputed from the tables afterwards, so the model cannot drift a number."
+    },
+    "Builder": {
+      "BasicsHeading": "Basics",
+      "BasicsTooltip": "Name, level and road map. The road map is the book's guidance for a creature concept: picking one re-seeds every tier below, and you can then adjust any of them.",
+      "Name": "Name",
+      "NameRequired": "Give the creature a name first.",
+      "Level": "Level",
+      "RoadMap": "Road map",
+      "RoadMapHint": "Building Creatures road maps: a starting array of tiers for a concept. Picking one resets the stat tiers.",
+      "Size": "Size",
+      "Rarity": "Rarity",
+      "Speed": "Speed (ft.)",
+      "Traits": "Traits",
+      "TraitsPlaceholder": "undead, mindless",
+      "Description": "Description",
+      "DescriptionPlaceholder": "What is this creature? Appearance, behaviour, lore…",
+      "DescriptionHint": "Stored in the actor's notes and used as the artwork prompt.",
+      "StatsHeading": "Statistics",
+      "StatsTooltip": "Every value is read from the Building Creatures tables for the chosen level: pick the tier, the number follows. Extreme is exceptional, high is a strength, moderate is typical, low/terrible are weaknesses.",
+      "AbilitiesHeading": "Ability modifiers",
+      "AbilitiesTooltip": "Ability modifier tiers from the same tables. Mostly descriptive on an NPC sheet, but keep them consistent with the concept: a brute has high Strength.",
+      "StrikesHeading": "Strikes",
+      "StrikesTooltip": "Each strike uses the attack and damage tiers chosen above. Ranged strikes get a 30 ft. range increment you can edit on the sheet afterwards.",
+      "StrikeName": "Strike name (e.g. Jaws)",
+      "StrikeRanged": "ranged",
+      "AddStrike": "Add strike",
+      "RemoveStrike": "Remove this strike",
+      "SkillsHeading": "Skills",
+      "SkillsTooltip": "Skills with their tier; the modifier comes from the skills table for the level.",
+      "AddSkill": "Add skill",
+      "RemoveSkill": "Remove this skill"
+    },
+    "Create": {
+      "Submit": "Create actor",
+      "ArtLabel": "Also generate portrait & token art",
+      "ArtHint": "Uses your OpenAI key to paint a portrait from the creature's description and set it as both the actor image and the prototype token.",
+      "PaintingBusy": "Painting the portrait…",
+      "Success": "Created {name} (level {level}).",
+      "ArtSuccess": "Artwork applied to {name}.",
+      "ArtFailed": "The actor was created, but artwork generation failed: {message}"
+    },
+    "Preview": {
+      "Level": "Creature",
+      "Languages": "Languages",
+      "Skills": "Skills",
+      "Abilities": "Abilities",
+      "Immunities": "Immunities",
+      "Resistances": "Resistances",
+      "Weaknesses": "Weaknesses",
+      "Speed": "Speed",
+      "Spells": "Spells",
+      "SpellLine": "DC {dc}, attack {attack} (add spells on the sheet)",
+      "Strikes": "Strikes",
+      "Specials": "Abilities"
+    },
+    "Generate": {
+      "Working": "Working…",
+      "Cancel": "Cancel",
+      "Cancelled": "Generation cancelled.",
+      "UsingModelHint": "Requests go straight from this browser to the API using your key.",
+      "NoKeyShort": "No API key"
+    },
+    "Models": {
+      "Sol": "GPT-5.6 Sol (best, priciest)",
+      "Terra": "GPT-5.6 Terra (balanced)",
+      "Luna": "GPT-5.6 Luna (fast, cheapest)"
+    },
+    "Image": {
+      "SizeSquare": "Square (1024×1024)",
+      "SizeLandscape": "Landscape (1536×1024)",
+      "SizePortrait": "Portrait (1024×1536)",
+      "QualityAuto": "Auto",
+      "QualityLow": "Low",
+      "QualityMedium": "Medium",
+      "QualityHigh": "High"
+    },
+    "Settings": {
+      "ApiKey": {
+        "Name": "OpenAI API key",
+        "Hint": "Stored only in this browser (client scope), never in the world database, so players can never see it. Each GM enters their own."
+      },
+      "Model": {
+        "Name": "Text model",
+        "Hint": "Model used for AI parsing and ability rewrites."
+      },
+      "ModelOverride": {
+        "Name": "Model override",
+        "Hint": "Free-text model id; wins over the dropdown when set."
+      },
+      "BaseUrl": {
+        "Name": "API base URL",
+        "Hint": "Change to point at an OpenAI-compatible endpoint."
+      },
+      "Temperature": {
+        "Name": "Temperature",
+        "Hint": "Blank omits the parameter (required for reasoning models). 0-2 otherwise."
+      },
+      "Timeout": {
+        "Name": "Request timeout (seconds)",
+        "Hint": "How long to wait before abandoning a request."
+      },
+      "ImageModel": {
+        "Name": "Image model",
+        "Hint": "Model used for portrait and token artwork."
+      },
+      "ImageSize": {
+        "Name": "Image size",
+        "Hint": "Dimensions for generated artwork."
+      },
+      "ImageQuality": {
+        "Name": "Image quality",
+        "Hint": "Higher quality costs more per image."
+      },
+      "OutputLanguage": {
+        "Name": "Output language",
+        "Hint": "Language for AI-generated prose (e.g. \"Spanish\"). Blank follows Foundry's language."
+      }
+    },
+    "Usage": {
+      "Reported": "OpenAI: {input} in / {output} out tokens, ~${cost} (total ~${total}).",
+      "TokensOnly": "OpenAI: {input} in / {output} out tokens (no price known for this model)."
+    },
+    "Errors": {
+      "GMOnly": "Only a GM can use the character creator.",
+      "NoApiKey": "No OpenAI API key is configured in the module settings.",
+      "ActorCreateFailed": "Foundry refused to create the actor - check the console for validation errors.",
+      "Retrying": "The request failed ({message}) - retrying once…",
+      "Timeout": "The request took longer than {seconds}s and was abandoned.",
+      "Network": "Network error talking to the API: {message}",
+      "Api": "API error {status}: {message}",
+      "Refusal": "The model declined the request: {message}",
+      "EmptyResponse": "The API returned an empty response.",
+      "BadJson": "The API answer was not valid JSON: {message}",
+      "NotAnImage": "That file is not an image.",
+      "NoImageReturned": "The API returned no image data.",
+      "UploadFailed": "Saving the generated image into the world data directory failed."
+    }
+  }
+}

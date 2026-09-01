@@ -1,0 +1,263 @@
+/* Matadragones Character Creator */
+
+.mcc .window-content {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.mcc-root {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  height: 100%;
+  min-height: 0;
+}
+
+/* --- Tabs ---------------------------------------------------------------- */
+
+.mcc-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-bottom: 1px solid var(--color-border-light-primary, #7a7971);
+  padding-bottom: 0.25rem;
+  flex-shrink: 0;
+}
+
+.mcc-tabs button {
+  width: auto;
+  padding: 0.25rem 0.75rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px 4px 0 0;
+}
+
+.mcc-tabs button.active {
+  border-color: var(--color-border-light-primary, #7a7971);
+  border-bottom-color: transparent;
+  font-weight: bold;
+}
+
+.mcc-model {
+  margin-left: auto;
+  font-size: var(--font-size-12, 12px);
+  opacity: 0.85;
+}
+
+/* --- Layout --------------------------------------------------------------- */
+
+.mcc-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+  min-height: 0;
+}
+
+.mcc-columns {
+  display: flex;
+  gap: 0.75rem;
+  flex: 1;
+  min-height: 0;
+}
+
+.mcc-column {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.mcc-column h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.5rem 0 0.25rem;
+  border-bottom: 1px solid var(--color-border-light-tertiary, #b5b3a4);
+}
+
+.mcc-column h3 i {
+  font-size: 0.8em;
+  opacity: 0.7;
+}
+
+/* --- Fields ---------------------------------------------------------------- */
+
+.mcc-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 0.25rem 0;
+}
+
+.mcc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: var(--font-size-13, 13px);
+}
+
+.mcc-field-wide { flex: 1; min-width: 8rem; }
+
+.mcc-field span { font-weight: bold; }
+
+.mcc-field small { opacity: 0.75; }
+
+.mcc-statblock-input {
+  width: 100%;
+  font-family: var(--font-mono, monospace);
+  font-size: var(--font-size-12, 12px);
+  resize: vertical;
+}
+
+.mcc-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.mcc-tier-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 0.25rem 0.75rem;
+}
+
+.mcc-tier-row {
+  display: grid;
+  grid-template-columns: 6rem 1fr 3.5rem;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: var(--font-size-13, 13px);
+}
+
+.mcc-tier-row output {
+  text-align: right;
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+}
+
+.mcc-tier-row.mcc-overridden select {
+  border-color: var(--color-shadow-primary, #ff6400);
+}
+
+.mcc-strike-row input[type='text'] { flex: 1; min-width: 6rem; }
+.mcc-strike-row select { width: auto; }
+.mcc-strike-row button,
+.mcc-skill-row button {
+  width: auto;
+  flex: 0 0 auto;
+  line-height: 1.4;
+}
+.mcc-skill-row select { width: auto; flex: 1; }
+
+.mcc-add {
+  width: auto;
+  margin-top: 0.15rem;
+}
+
+/* --- Preview --------------------------------------------------------------- */
+
+.mcc-preview {
+  border: 1px solid var(--color-border-light-primary, #7a7971);
+  border-radius: 4px;
+  padding: 0.5rem;
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.mcc-preview-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  border-bottom: 2px solid currentColor;
+}
+
+.mcc-level { font-size: 0.8em; white-space: nowrap; }
+
+.mcc-trait-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+  margin: 0.25rem 0;
+}
+
+.mcc-trait {
+  background: #522e2c;
+  color: #f5eee6;
+  font-size: var(--font-size-11, 11px);
+  text-transform: uppercase;
+  padding: 0.05rem 0.35rem;
+  border: 1px solid #d8c384;
+}
+
+.mcc-statlines { margin: 0.25rem 0; }
+
+.mcc-statlines > div {
+  margin: 0.15rem 0;
+  font-size: var(--font-size-13, 13px);
+}
+
+.mcc-statlines dt {
+  display: inline;
+  font-weight: bold;
+}
+
+.mcc-statlines dd {
+  display: inline;
+  margin: 0;
+}
+
+.mcc-strike-list,
+.mcc-special-list {
+  margin: 0.15rem 0 0.4rem;
+  padding-left: 1rem;
+  font-size: var(--font-size-13, 13px);
+}
+
+.mcc-special-list li { margin-bottom: 0.25rem; }
+
+.mcc-action-type {
+  font-size: 0.85em;
+  opacity: 0.7;
+}
+
+/* --- Footer / status -------------------------------------------------------- */
+
+.mcc-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  border-top: 1px solid var(--color-border-light-primary, #7a7971);
+  padding-top: 0.4rem;
+  flex-shrink: 0;
+}
+
+.mcc-footer .mcc-checkbox { margin-right: auto; }
+
+.mcc-footer button,
+.mcc-parse-row button { width: auto; }
+
+.mcc-primary {
+  font-weight: bold;
+}
+
+.mcc-busy { font-style: italic; }
+
+.mcc-warning {
+  color: var(--color-level-warning, #ee9b3a);
+  margin: 0.15rem 0;
+  font-size: var(--font-size-12, 12px);
+}
+
+.mcc-note,
+.mcc-parsed-summary {
+  font-size: var(--font-size-12, 12px);
+  opacity: 0.9;
+  margin: 0.25rem 0;
+}
+
+.mcc-open-button {
+  width: auto;
+}

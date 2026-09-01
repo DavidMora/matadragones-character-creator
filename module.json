@@ -1,0 +1,51 @@
+{
+  "id": "matadragones-character-creator",
+  "title": "Matadragones Character Creator",
+  "description": "Build PF2e creatures with the GM Core Building Creatures road maps, or import a stat block from the world's oldest roleplaying game (5th edition) and get a level-appropriate PF2e version computed deterministically from the published tables. OpenAI is optional: parsing help for messy pastes, PF2e-idiom rewrites of ability text, and portrait/token artwork.",
+  "version": "0.1.0",
+  "authors": [
+    {
+      "name": "David Mora",
+      "url": "https://matadragones.org"
+    }
+  ],
+  "compatibility": {
+    "minimum": "13",
+    "verified": "13.351"
+  },
+  "relationships": {
+    "systems": [
+      {
+        "id": "pf2e",
+        "type": "system",
+        "manifest": "https://raw.githubusercontent.com/foundryvtt/pf2e/master/system.json",
+        "compatibility": {
+          "minimum": "6.0.0",
+          "verified": "8.4.1"
+        }
+      }
+    ]
+  },
+  "esmodules": [
+    "scripts/module.js"
+  ],
+  "styles": [
+    "styles/module.css"
+  ],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    },
+    {
+      "lang": "es",
+      "name": "Español",
+      "path": "lang/es.json"
+    }
+  ],
+  "url": "https://github.com/DavidMora/matadragones-character-creator",
+  "manifest": "https://github.com/DavidMora/matadragones-character-creator/releases/latest/download/module.json",
+  "download": "https://github.com/DavidMora/matadragones-character-creator/releases/latest/download/module.zip",
+  "bugs": "https://github.com/DavidMora/matadragones-character-creator/issues"
+}

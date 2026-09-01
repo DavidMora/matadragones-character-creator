@@ -1,0 +1,174 @@
+<section class="mcc-tab mcc-builder">
+  <div class="mcc-columns">
+    <div class="mcc-column mcc-column-input">
+      <h3>{{localize 'MCC.Builder.BasicsHeading'}}
+        <i class="fa-solid fa-circle-info" data-tooltip="{{localize 'MCC.Builder.BasicsTooltip'}}"></i>
+      </h3>
+      <div class="mcc-row">
+        <label class="mcc-field mcc-field-wide">
+          <span>{{localize 'MCC.Builder.Name'}}</span>
+          <input type="text" data-bind="builder.name" value="{{builder.name}}" {{#if busy}}disabled{{/if}}>
+        </label>
+        <label class="mcc-field">
+          <span>{{localize 'MCC.Builder.Level'}}</span>
+          <select data-bind="builder.level" {{#if busy}}disabled{{/if}}>
+            {{#each builder.level}}
+              <option value="{{value}}" {{#if selected}}selected{{/if}}>{{value}}</option>
+            {{/each}}
+          </select>
+        </label>
+        <label class="mcc-field">
+          <span>{{localize 'MCC.Builder.RoadMap'}}</span>
+          <select data-bind="builder.roadMap" {{#if busy}}disabled{{/if}}
+                  data-tooltip="{{localize 'MCC.Builder.RoadMapHint'}}">
+            {{#each builder.roadMaps}}
+              <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+            {{/each}}
+          </select>
+        </label>
+      </div>
+      <div class="mcc-row">
+        <label class="mcc-field">
+          <span>{{localize 'MCC.Builder.Size'}}</span>
+          <select data-bind="builder.size" {{#if busy}}disabled{{/if}}>
+            {{#each builder.sizes}}
+              <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+            {{/each}}
+          </select>
+        </label>
+        <label class="mcc-field">
+          <span>{{localize 'MCC.Builder.Rarity'}}</span>
+          <select data-bind="builder.rarity" {{#if busy}}disabled{{/if}}>
+            {{#each builder.rarities}}
+              <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+            {{/each}}
+          </select>
+        </label>
+        <label class="mcc-field">
+          <span>{{localize 'MCC.Builder.Speed'}}</span>
+          <input type="number" data-bind="builder.speed" value="{{builder.speed}}" min="0" step="5"
+                 {{#if busy}}disabled{{/if}}>
+        </label>
+        <label class="mcc-field mcc-field-wide">
+          <span>{{localize 'MCC.Builder.Traits'}}</span>
+          <input type="text" data-bind="builder.traits" value="{{builder.traits}}"
+                 placeholder="{{localize 'MCC.Builder.TraitsPlaceholder'}}" {{#if busy}}disabled{{/if}}>
+        </label>
+      </div>
+      <label class="mcc-field">
+        <span>{{localize 'MCC.Builder.Description'}}</span>
+        <textarea data-bind="builder.description" rows="2"
+                  placeholder="{{localize 'MCC.Builder.DescriptionPlaceholder'}}"
+                  {{#if busy}}disabled{{/if}}>{{builder.description}}</textarea>
+        <small>{{localize 'MCC.Builder.DescriptionHint'}}</small>
+      </label>
+
+      <h3>{{localize 'MCC.Builder.StatsHeading'}}
+        <i class="fa-solid fa-circle-info" data-tooltip="{{localize 'MCC.Builder.StatsTooltip'}}"></i>
+      </h3>
+      <div class="mcc-tier-grid">
+        {{#each builder.tiers}}
+          <label class="mcc-tier-row">
+            <span>{{localize label}}</span>
+            <select data-bind="builder.tier.{{key}}" {{#if ../busy}}disabled{{/if}}>
+              {{#each options}}
+                <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+              {{/each}}
+            </select>
+            <output>{{value}}</output>
+          </label>
+        {{/each}}
+      </div>
+
+      <h3>{{localize 'MCC.Builder.AbilitiesHeading'}}
+        <i class="fa-solid fa-circle-info" data-tooltip="{{localize 'MCC.Builder.AbilitiesTooltip'}}"></i>
+      </h3>
+      <div class="mcc-tier-grid mcc-ability-grid">
+        {{#each builder.abilities}}
+          <label class="mcc-tier-row">
+            <span>{{label}}</span>
+            <select data-bind="builder.ability.{{key}}" {{#if ../busy}}disabled{{/if}}>
+              {{#each options}}
+                <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+              {{/each}}
+            </select>
+            <output>{{value}}</output>
+          </label>
+        {{/each}}
+      </div>
+
+      <h3>{{localize 'MCC.Builder.StrikesHeading'}}
+        <i class="fa-solid fa-circle-info" data-tooltip="{{localize 'MCC.Builder.StrikesTooltip'}}"></i>
+      </h3>
+      {{#each builder.strikes}}
+        <div class="mcc-row mcc-strike-row">
+          <input type="text" data-bind="builder.strike.{{index}}.name" value="{{name}}"
+                 placeholder="{{localize 'MCC.Builder.StrikeName'}}" {{#if ../busy}}disabled{{/if}}>
+          <label class="mcc-checkbox">
+            <input type="checkbox" data-bind="builder.strike.{{index}}.kind"
+                   {{#if isRanged}}checked{{/if}} {{#if ../busy}}disabled{{/if}}>
+            {{localize 'MCC.Builder.StrikeRanged'}}
+          </label>
+          <select data-bind="builder.strike.{{index}}.damageType" {{#if ../busy}}disabled{{/if}}>
+            {{#each damageTypes}}
+              <option value="{{value}}" {{#if selected}}selected{{/if}}>{{value}}</option>
+            {{/each}}
+          </select>
+          <button type="button" data-action="removeStrike" data-index="{{index}}"
+                  data-tooltip="{{localize 'MCC.Builder.RemoveStrike'}}" {{#if ../busy}}disabled{{/if}}>
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>
+      {{/each}}
+      <button type="button" class="mcc-add" data-action="addStrike" {{#if busy}}disabled{{/if}}>
+        <i class="fa-solid fa-plus"></i> {{localize 'MCC.Builder.AddStrike'}}
+      </button>
+
+      <h3>{{localize 'MCC.Builder.SkillsHeading'}}
+        <i class="fa-solid fa-circle-info" data-tooltip="{{localize 'MCC.Builder.SkillsTooltip'}}"></i>
+      </h3>
+      {{#each builder.skills}}
+        <div class="mcc-row mcc-skill-row">
+          <select data-bind="builder.skill.{{index}}.slug" {{#if ../busy}}disabled{{/if}}>
+            {{#each options}}
+              <option value="{{value}}" {{#if selected}}selected{{/if}}>{{value}}</option>
+            {{/each}}
+          </select>
+          <select data-bind="builder.skill.{{index}}.tier" {{#if ../busy}}disabled{{/if}}>
+            {{#each tiers}}
+              <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+            {{/each}}
+          </select>
+          <button type="button" data-action="removeSkill" data-index="{{index}}"
+                  data-tooltip="{{localize 'MCC.Builder.RemoveSkill'}}" {{#if ../busy}}disabled{{/if}}>
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>
+      {{/each}}
+      <button type="button" class="mcc-add" data-action="addSkill" {{#if busy}}disabled{{/if}}>
+        <i class="fa-solid fa-plus"></i> {{localize 'MCC.Builder.AddSkill'}}
+      </button>
+    </div>
+
+    <div class="mcc-column mcc-column-preview">
+      {{> mccSpecPreview builderSpec}}
+    </div>
+  </div>
+
+  <footer class="mcc-footer">
+    <label class="mcc-checkbox" data-tooltip="{{localize 'MCC.Create.ArtHint'}}">
+      <input type="checkbox" id="mcc-art-builder" {{#unless hasApiKey}}disabled{{/unless}}>
+      {{localize 'MCC.Create.ArtLabel'}}
+    </label>
+    {{#if busyCreate}}
+      <span class="mcc-busy"><i class="fa-solid fa-spinner fa-spin"></i>
+        {{#if busyArtwork}}{{localize 'MCC.Create.PaintingBusy'}}{{else}}{{localize 'MCC.Generate.Working'}}{{/if}}
+      </span>
+      <button type="button" data-action="cancel">{{localize 'MCC.Generate.Cancel'}}</button>
+    {{else}}
+      <button type="button" class="mcc-primary" data-action="createBuilder" {{#if busy}}disabled{{/if}}>
+        <i class="fa-solid fa-user-plus"></i> {{localize 'MCC.Create.Submit'}}
+      </button>
+    {{/if}}
+  </footer>
+</section>

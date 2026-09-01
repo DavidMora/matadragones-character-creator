@@ -1,0 +1,102 @@
+<section class="mcc-tab mcc-import">
+
+  <div class="mcc-columns">
+    <div class="mcc-column mcc-column-input">
+      <h3>{{localize 'MCC.Import.PasteHeading'}}
+        <i class="fa-solid fa-circle-info" data-tooltip="{{localize 'MCC.Import.PasteTooltip'}}"></i>
+      </h3>
+      <textarea data-bind="import.text" rows="14" class="mcc-statblock-input"
+                placeholder="{{localize 'MCC.Import.PastePlaceholder'}}"
+                {{#if busy}}disabled{{/if}}>{{importText}}</textarea>
+      <div class="mcc-row mcc-parse-row">
+        <button type="button" data-action="parse" {{#if busy}}disabled{{/if}}>
+          <i class="fa-solid fa-gears"></i> {{localize 'MCC.Import.Parse'}}
+        </button>
+        <button type="button" data-action="aiParse" {{#unless hasApiKey}}disabled{{/unless}} {{#if busy}}disabled{{/if}}
+                data-tooltip="{{localize 'MCC.Import.AiParseHint'}}">
+          <i class="fa-solid fa-wand-magic-sparkles"></i> {{localize 'MCC.Import.AiParse'}}
+        </button>
+        {{#if busyParse}}
+          <span class="mcc-busy"><i class="fa-solid fa-spinner fa-spin"></i> {{localize 'MCC.Generate.Working'}}</span>
+          <button type="button" data-action="cancel">{{localize 'MCC.Generate.Cancel'}}</button>
+        {{/if}}
+      </div>
+
+      {{#if parsed}}
+        <p class="mcc-parsed-summary">
+          <i class="fa-solid fa-circle-check"></i>
+          {{localize 'MCC.Import.ParsedSummary' name=parsed.name cr=parsed.crText type=parsed.type
+             specials=parsed.specialCount attacks=parsed.attackCount}}
+          {{#if (mccEq parsedVia 'ai')}}<em>({{localize 'MCC.Import.ViaAI'}})</em>{{/if}}
+        </p>
+        {{#each parseMissing}}
+          <p class="mcc-warning"><i class="fa-solid fa-triangle-exclamation"></i>
+            {{localize 'MCC.Import.MissingField' field=this}}</p>
+        {{/each}}
+
+        <h3>{{localize 'MCC.Import.TuneHeading'}}
+          <i class="fa-solid fa-circle-info" data-tooltip="{{localize 'MCC.Import.TuneTooltip'}}"></i>
+        </h3>
+        <label class="mcc-field">
+          <span>{{localize 'MCC.Import.TargetLevel'}}</span>
+          <select data-bind="import.level" {{#if busy}}disabled{{/if}}>
+            {{#each importLevels}}
+              <option value="{{value}}" {{#if selected}}selected{{/if}}>{{value}}</option>
+            {{/each}}
+          </select>
+        </label>
+        <div class="mcc-tier-grid">
+          {{#each importTiers}}
+            <label class="mcc-tier-row {{#unless isDefault}}mcc-overridden{{/unless}}">
+              <span>{{localize label}}</span>
+              <select data-bind="import.tier.{{key}}" {{#if ../busy}}disabled{{/if}}>
+                {{#each options}}
+                  <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+                {{/each}}
+              </select>
+              <output>{{value}}</output>
+            </label>
+          {{/each}}
+        </div>
+      {{/if}}
+    </div>
+
+    <div class="mcc-column mcc-column-preview">
+      {{#if parsed}}
+        {{> mccSpecPreview importSpec}}
+        <div class="mcc-row">
+          <button type="button" data-action="rewrite"
+                  {{#unless hasApiKey}}disabled{{/unless}} {{#if busy}}disabled{{/if}}
+                  data-tooltip="{{localize 'MCC.Import.RewriteHint'}}">
+            <i class="fa-solid fa-feather"></i> {{localize 'MCC.Import.Rewrite'}}
+          </button>
+          {{#if busyRewrite}}
+            <span class="mcc-busy"><i class="fa-solid fa-spinner fa-spin"></i> {{localize 'MCC.Generate.Working'}}</span>
+            <button type="button" data-action="cancel">{{localize 'MCC.Generate.Cancel'}}</button>
+          {{/if}}
+        </div>
+      {{else}}
+        <p class="mcc-note"><i class="fa-solid fa-circle-info"></i> {{localize 'MCC.Import.EmptyPreview'}}</p>
+      {{/if}}
+    </div>
+  </div>
+
+  {{#if parsed}}
+    <footer class="mcc-footer">
+      <label class="mcc-checkbox" data-tooltip="{{localize 'MCC.Create.ArtHint'}}">
+        <input type="checkbox" id="mcc-art-import" {{#unless hasApiKey}}disabled{{/unless}}>
+        {{localize 'MCC.Create.ArtLabel'}}
+      </label>
+      {{#if busyCreate}}
+        <span class="mcc-busy"><i class="fa-solid fa-spinner fa-spin"></i>
+          {{#if busyArtwork}}{{localize 'MCC.Create.PaintingBusy'}}{{else}}{{localize 'MCC.Generate.Working'}}{{/if}}
+        </span>
+        <button type="button" data-action="cancel">{{localize 'MCC.Generate.Cancel'}}</button>
+      {{else}}
+        <button type="button" class="mcc-primary" data-action="createImport" {{#if busy}}disabled{{/if}}>
+          <i class="fa-solid fa-user-plus"></i> {{localize 'MCC.Create.Submit'}}
+        </button>
+      {{/if}}
+    </footer>
+  {{/if}}
+</section>

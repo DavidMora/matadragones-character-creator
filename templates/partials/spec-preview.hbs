@@ -1,0 +1,39 @@
+<div class="mcc-preview">
+  <h3 class="mcc-preview-title">{{name}}
+    <span class="mcc-level">{{localize 'MCC.Preview.Level'}} {{level}}</span>
+  </h3>
+  <div class="mcc-trait-line">
+    {{#each traits}}<span class="mcc-trait">{{this}}</span>{{/each}}
+  </div>
+  <dl class="mcc-statlines">
+    <div><dt>{{localize 'MCC.Stat.Perception'}}</dt>
+      <dd>{{perception}}{{#if senses}}; {{senses}}{{/if}}</dd></div>
+    {{#if languages}}<div><dt>{{localize 'MCC.Preview.Languages'}}</dt><dd>{{languages}}</dd></div>{{/if}}
+    {{#if skills}}<div><dt>{{localize 'MCC.Preview.Skills'}}</dt><dd>{{skills}}</dd></div>{{/if}}
+    <div><dt>{{localize 'MCC.Preview.Abilities'}}</dt><dd>{{abilities}}</dd></div>
+    <div><dt>{{localize 'MCC.Stat.AC'}}</dt>
+      <dd>{{ac}}; <strong>{{localize 'MCC.Stat.Fort'}}</strong> {{fort}},
+        <strong>{{localize 'MCC.Stat.Ref'}}</strong> {{ref}},
+        <strong>{{localize 'MCC.Stat.Will'}}</strong> {{will}}</dd></div>
+    <div><dt>{{localize 'MCC.Stat.HP'}}</dt><dd>{{hp}}</dd></div>
+    {{#if immunities}}<div><dt>{{localize 'MCC.Preview.Immunities'}}</dt><dd>{{immunities}}</dd></div>{{/if}}
+    {{#if resistances}}<div><dt>{{localize 'MCC.Preview.Resistances'}}</dt><dd>{{resistances}}</dd></div>{{/if}}
+    {{#if weaknesses}}<div><dt>{{localize 'MCC.Preview.Weaknesses'}}</dt><dd>{{weaknesses}}</dd></div>{{/if}}
+    <div><dt>{{localize 'MCC.Preview.Speed'}}</dt><dd>{{speed}}</dd></div>
+    {{#if spell}}<div><dt>{{localize 'MCC.Preview.Spells'}}</dt><dd>{{spell}}</dd></div>{{/if}}
+  </dl>
+  {{#if strikes}}
+    <h4>{{localize 'MCC.Preview.Strikes'}}</h4>
+    <ul class="mcc-strike-list">
+      {{#each strikes}}<li>{{line}}</li>{{/each}}
+    </ul>
+  {{/if}}
+  {{#if specials}}
+    <h4>{{localize 'MCC.Preview.Specials'}}</h4>
+    <ul class="mcc-special-list">
+      {{#each specials}}
+        <li><strong>{{name}}</strong> <span class="mcc-action-type">[{{actionType}}]</span> {{description}}</li>
+      {{/each}}
+    </ul>
+  {{/if}}
+</div>
