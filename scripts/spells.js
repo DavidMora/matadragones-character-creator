@@ -81,15 +81,43 @@ export function spellSource(base, entryId, spell) {
   return source;
 }
 
-/** Slot counts per rank, counted from the spells that resolved. */
-export function slotsForSources(sources) {
+/** The rank a spell occupies: cantrips sit at 0, everything else at its own. */
+export function rankOf(source) {
+  if (source?.system?.traits?.value?.includes('cantrip')) return 0;
+  return Math.min(Math.max(Number(source?.system?.level?.value) || 1, 1), 10);
+}
+
+/**
+ * Slots for an entry, counted from the spells that actually resolved.
+ *
+ * The two categories store slots differently, and getting it wrong is what
+ * produced a sheet full of "Empty Slot (drag spell here)": a **prepared**
+ * caster's slots name the spell items prepared into them, by id, while a
+ * **spontaneous** caster's slots are only counts, its spells forming a
+ * repertoire. Verified against prepared and spontaneous entries in the
+ * pathfinder-monster-core pack.
+ *
+ * @param created The spell documents as the actor created them, ids and all.
+ */
+export function slotsForSpells(created, category) {
   const slots = {};
-  for (const source of sources) {
-    const isCantrip = source.system?.traits?.value?.includes('cantrip');
-    const rank = isCantrip ? 0 : Math.min(Math.max(Number(source.system?.level?.value) || 1, 1), 10);
-    const key = `slot${rank}`;
-    const count = (slots[key]?.max ?? 0) + 1;
-    slots[key] = { value: count, max: count, prepared: [] };
+  for (const spell of created) {
+    const id = spell._id ?? spell.id;
+    const key = `slot${rankOf(spell)}`;
+    const slot = slots[key] ?? (slots[key] = { max: 0, prepared: [] });
+    slot.max += 1;
+    if (id) slot.prepared.push({ id });
+  }
+
+  for (const [key, slot] of Object.entries(slots)) {
+    if (category === 'prepared') {
+      // Cantrips are always available; the rank-0 row is a list, not a budget.
+      slots[key] = key === 'slot0'
+        ? { max: slot.max, prepared: slot.prepared }
+        : { max: slot.max, value: slot.max, prepared: slot.prepared };
+    } else {
+      slots[key] = { max: slot.max, value: slot.max, prepared: [] };
+    }
   }
   return slots;
 }
@@ -128,15 +156,15 @@ export async function attachSpellcasting(actor, spec, { findSpell, resolveUuid }
       sources.push(spellSource(base, entryId, spell));
     }
     if (sources.length) {
-      await actor.createEmbeddedDocuments('Item', sources);
+      const madeSpells = await actor.createEmbeddedDocuments('Item', sources);
       created += sources.length;
-      // A prepared or spontaneous entry needs slots, and the honest number is
-      // however many spells of each rank actually landed - which is only
-      // known once they have resolved.
+      // A prepared or spontaneous entry needs its slots, and they can only be
+      // filled once the spells exist: a prepared slot names the spell item
+      // in it, so this has to happen after creation, not before.
       if (entry.slotsFromSpells) {
         await actor.updateEmbeddedDocuments('Item', [{
           _id: entryId,
-          system: { slots: slotsForSources(sources) },
+          system: { slots: slotsForSpells(madeSpells ?? [], entry.category) },
         }]);
       }
     }

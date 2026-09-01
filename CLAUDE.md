@@ -46,6 +46,11 @@ apply here too.
   elements, so the zone counts nesting depth rather than toggling on every
   crossing. A drop zone must contain its own invitation text and keep a
   `min-height`, or it collapses to a strip nobody can hit.
+- **A prepared caster's slots name their spells.** `slots.slotN.prepared` is
+  a list of `{id}` pointing at the created spell items, so the slots can only
+  be written *after* the spells exist; spontaneous entries carry counts only.
+  Getting this wrong renders a full spell list as "Empty Slot (drag spell
+  here)". Both shapes were read off the pathfinder-monster-core pack.
 - **The OpenAI key stays client-scoped.** World settings are readable by every
   player regardless of `restricted`.
 - **pf2e schemas were verified against the system source** (v7.12/v8.4):

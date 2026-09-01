@@ -231,14 +231,75 @@ check('a prepared entry asks for slots from its spells',
   wizardSpec.spellcasting.entries[0].slotsFromSpells, true);
 
 // Slots are counted from the ranks that actually resolved, cantrips at 0.
-const { slotsForSources } = await load('spells.js');
-check('slots counted per rank', slotsForSources([
-  { system: { level: { value: 1 }, traits: { value: ['cantrip'] } } },
-  { system: { level: { value: 3 }, traits: { value: [] } } },
-  { system: { level: { value: 3 }, traits: { value: [] } } },
-]), {
-  slot0: { value: 1, max: 1, prepared: [] },
-  slot3: { value: 2, max: 2, prepared: [] },
+const spellsModule = await load('spells.js');
+const { slotsForSpells, rankOf, attachSpellcasting } = spellsModule;
+
+check('cantrips sit at rank 0, others at their own', [
+  rankOf({ system: { level: { value: 1 }, traits: { value: ['cantrip'] } } }),
+  rankOf({ system: { level: { value: 3 }, traits: { value: [] } } }),
+], [0, 3]);
+
+const madeSpells = [
+  { _id: 'a', system: { level: { value: 1 }, traits: { value: ['cantrip'] } } },
+  { _id: 'b', system: { level: { value: 3 }, traits: { value: [] } } },
+  { _id: 'c', system: { level: { value: 3 }, traits: { value: [] } } },
+];
+// A prepared slot must name the spell prepared into it, or the sheet shows
+// "Empty Slot (drag spell here)" beside a creature that has the spell.
+check('prepared slots name their spells', slotsForSpells(madeSpells, 'prepared'), {
+  slot0: { max: 1, prepared: [{ id: 'a' }] },
+  slot3: { max: 2, value: 2, prepared: [{ id: 'b' }, { id: 'c' }] },
 });
+check('spontaneous slots are counts, not preparations', slotsForSpells(madeSpells, 'spontaneous'), {
+  slot0: { max: 1, value: 1, prepared: [] },
+  slot3: { max: 2, value: 2, prepared: [] },
+});
+
+// End to end: a prepared caster's entry comes out with its slots filled by
+// the spells that were actually created on the actor.
+function fakeCastingActor() {
+  let counter = 0;
+  const items = [];
+  const updates = [];
+  return {
+    items,
+    updates,
+    createEmbeddedDocuments: async (_type, sources) => sources.map((source) => {
+      const created = { ...structuredClone(source), _id: `made${(counter += 1)}` };
+      items.push(created);
+      return created;
+    }),
+    updateEmbeddedDocuments: async (_type, changes) => { updates.push(...changes); return changes; },
+  };
+}
+
+const preparedSpec = specFromBuilder({
+  ...conceptDraft,
+  conceptSpells: [
+    { name: 'acid grip', uses: null, atWill: false, constant: false },
+    { name: 'caustic blast', uses: null, atWill: true, constant: false },
+  ],
+});
+const castingActor = fakeCastingActor();
+await attachSpellcasting(castingActor, preparedSpec, {
+  findSpell: async (name) => ({
+    _id: 'pack', name, type: 'spell',
+    system: {
+      slug: name.replace(/ /g, '-'),
+      level: { value: name === 'caustic blast' ? 1 : 2 },
+      traits: { value: name === 'caustic blast' ? ['cantrip'] : [] },
+      location: { value: null },
+    },
+  }),
+});
+const slotUpdate = castingActor.updates[0]?.system?.slots ?? {};
+const spellIds = castingActor.items.filter((i) => i.type === 'spell').map((i) => i._id);
+check('the entry was updated with slots after the spells existed',
+  castingActor.updates.length, 1);
+check('every created spell is prepared into a slot',
+  Object.values(slotUpdate).flatMap((s) => s.prepared.map((p) => p.id)).sort(),
+  spellIds.sort());
+check('no slot is left empty of the spell it counts',
+  Object.values(slotUpdate).every((s) => s.prepared.length === s.max), true);
 
 done('the builder path is rules-bound end to end');
