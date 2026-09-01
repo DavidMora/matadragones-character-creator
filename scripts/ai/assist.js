@@ -239,6 +239,9 @@ export async function aiRewriteAbilities(spec, { signal } = {}) {
   };
 }
 
+/** The schemas this module sends, exposed so check-schemas.mjs can audit them. */
+export const SCHEMAS_FOR_TEST = { transcription: PARSE_SCHEMA, rewrite: REWRITE_SCHEMA };
+
 /** The image prompt is assembled here, not typed by a model. */
 export function portraitPrompt(spec) {
   const traits = [spec.size, ...spec.traits].filter(Boolean).join(', ');

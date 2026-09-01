@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Foundry VTT module: build PF2e creatures from the Building Creatures tables, or import 5th-edition stat blocks deterministically.",
   "scripts": {
-    "test": "node test/check-imports.mjs && node test/check-tables.mjs && node test/check-parse.mjs && node test/check-spellnames.mjs && node test/check-convert.mjs && node test/check-actor.mjs && node test/check-equipment.mjs && node test/check-builder.mjs && node test/check-templates.mjs",
+    "test": "node test/check-imports.mjs && node test/check-schemas.mjs && node test/check-tables.mjs && node test/check-parse.mjs && node test/check-spellnames.mjs && node test/check-convert.mjs && node test/check-actor.mjs && node test/check-equipment.mjs && node test/check-builder.mjs && node test/check-templates.mjs",
     "test:imports": "node test/check-imports.mjs",
     "test:tables": "node test/check-tables.mjs",
     "test:parse": "node test/check-parse.mjs",
@@ -14,7 +14,8 @@
     "test:templates": "node test/check-templates.mjs",
     "test:spellnames": "node test/check-spellnames.mjs",
     "test:equipment": "node test/check-equipment.mjs",
-    "test:builder": "node test/check-builder.mjs"
+    "test:builder": "node test/check-builder.mjs",
+    "test:schemas": "node test/check-schemas.mjs"
   },
   "devDependencies": {
     "handlebars": "^4.7.8"

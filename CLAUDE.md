@@ -33,6 +33,12 @@ apply here too.
   list itself comes from the system's own
   `packs/pf2e/journals/remaster-changes.json`, not the wiki page, which is a
   stale copy with swapped dimensional anchor/lock rows.
+- **Every schema is audited by `check-schemas.mjs`.** Structured Outputs
+  strict mode requires each object to list *every* property in `required` and
+  set `additionalProperties: false`; a property added without its `required`
+  entry reads fine and fails at runtime as a 400 the GM sees only after
+  pressing the button. That suite also enforces the no-numbers rule, so add
+  schema fields with it running.
 - **The concept schema must stay numberless.** `ai/concept.js` lets the model
   pick tiers, never values, and the creature's level comes from
   `encounter.js`, not the model. Adding a numeric field there would break the

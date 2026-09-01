@@ -24,13 +24,13 @@ const FIVE_TIERS = [...FOUR_TIERS, 'terrible'];
 
 const tierField = (allowed, description) => ({ type: 'string', enum: allowed, description });
 
-const CONCEPT_SCHEMA = {
+export const CONCEPT_SCHEMA = {
   type: 'object',
   additionalProperties: false,
   required: [
     'name', 'description', 'size', 'rarity', 'traits', 'roadMap', 'tiers',
     'abilities', 'speed', 'strikes', 'skills', 'senses', 'languages',
-    'spellcasting', 'specials',
+    'spellcasting', 'gear', 'specials',
   ],
   properties: {
     name: { type: 'string', description: 'The creature\'s name. No level or CR in it.' },
