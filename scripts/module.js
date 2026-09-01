@@ -48,10 +48,7 @@ Hooks.on('renderActorDirectory', (_app, element) => {
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'mcc-open-button';
-  // The directory header is narrow, so the button wears the short name and
-  // carries the full one as its tooltip.
   button.innerHTML = `<i class="fa-solid fa-dragon"></i> ${game.i18n.localize('MCC.View.Button')}`;
-  button.dataset.tooltip = game.i18n.localize('MCC.View.Title');
   button.addEventListener('click', () => CreatorView.open());
   header.prepend(button);
 });
