@@ -1,12 +1,12 @@
 <div class="mcc-root">
   <nav class="mcc-tabs">
-    <button type="button" data-action="switchTab" data-tab="import"
-            class="{{#if isImport}}active{{/if}}">
-      <i class="fa-solid fa-file-import"></i> {{localize 'MCC.Tab.Import'}}
-    </button>
     <button type="button" data-action="switchTab" data-tab="builder"
             class="{{#if isBuilder}}active{{/if}}">
       <i class="fa-solid fa-hammer"></i> {{localize 'MCC.Tab.Builder'}}
+    </button>
+    <button type="button" data-action="switchTab" data-tab="import"
+            class="{{#if isImport}}active{{/if}}">
+      <i class="fa-solid fa-file-import"></i> {{localize 'MCC.Tab.Import'}}
     </button>
     <span class="mcc-model" data-tooltip="{{localize 'MCC.Generate.UsingModelHint'}}">
       {{#if hasApiKey}}<i class="fa-solid fa-plug-circle-check"></i> <code>{{model}}</code>

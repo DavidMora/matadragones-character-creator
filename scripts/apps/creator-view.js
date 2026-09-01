@@ -55,7 +55,7 @@ const frequencyToUses = (value) => ({
  * numbers) never loses what the GM typed.
  */
 export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
-  #tab = 'import';
+  #tab = 'builder';
   #importText = '';
   #parsed = null;
   #parseMissing = [];
@@ -530,7 +530,7 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
   // --- Actions --------------------------------------------------------------
 
   static #onSwitchTab(_event, target) {
-    this.#tab = target.dataset.tab === 'builder' ? 'builder' : 'import';
+    this.#tab = target.dataset.tab === 'import' ? 'import' : 'builder';
     this.render();
   }
 

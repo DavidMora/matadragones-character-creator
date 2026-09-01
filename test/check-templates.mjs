@@ -138,10 +138,21 @@ const context = {
   },
 };
 
+const viewSource = readFileSync(path.join(root, 'scripts', 'apps', 'creator-view.js'), 'utf8');
 const shell = Handlebars.compile(readFileSync(path.join(templates, 'creator-view.hbs'), 'utf8'));
 
 const importHtml = shell(context);
 const builderHtml = shell({ ...context, isImport: false, isBuilder: true });
+
+// Build from Scratch is the primary path, so it is the first tab and the one
+// a fresh window opens on. Both are easy to undo by accident: the nav order
+// lives in the template, the default lives on the instance.
+check('Build from Scratch is the first tab in the nav',
+  importHtml.indexOf('data-tab="builder"') < importHtml.indexOf('data-tab="import"'), true);
+check('a fresh window opens on the builder',
+  /#tab = 'builder';/.test(viewSource), true);
+check('an unknown tab falls back to the builder, not the importer',
+  /target\.dataset\.tab === 'import' \? 'import' : 'builder'/.test(viewSource), true);
 
 check('import tab renders its preview', importHtml.includes('Preview Beast'), true);
 check('spell entries render in the preview', importHtml.includes('translocate (at will)'), true);
@@ -172,7 +183,6 @@ check('builder remove buttons carry their index',
   builderHtml.includes('data-action="removeStrike" data-index="0"'), true);
 
 // Every data-action in the rendered HTML must be registered on the view.
-const viewSource = readFileSync(path.join(root, 'scripts', 'apps', 'creator-view.js'), 'utf8');
 const registered = [...viewSource.matchAll(/^\s{6}(\w+): CreatorView\./gm)].map((m) => m[1]);
 for (const html of [importHtml, builderHtml]) {
   for (const m of html.matchAll(/data-action="(\w+)"/g)) {
