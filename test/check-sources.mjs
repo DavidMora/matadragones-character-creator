@@ -190,4 +190,116 @@ check('strikes become melee items with the printed bonus',
 check('the provenance says it was transcribed, not converted',
   actor.system.details.publicNotes.includes('copied as printed'), true);
 
+// --- AI transcription, per source --------------------------------------------
+const assist = await load('ai/assist.js');
+check('every source can be transcribed by the model',
+  Object.values(sources.SOURCES).every((source) => typeof source.aiParse === 'function'), true);
+
+// PF1e: the model reports scores, the module derives modifiers - the same
+// arithmetic the text parser does, so both paths agree.
+const pf1Transcribed = assist.pf1TranscriptionToData({
+  name: 'Cinder Drake', size: 'med', type: 'dragon', subtype: 'fire',
+  ac: 20, hp: 66, walkSpeed: 40, otherSpeeds: [{ type: 'fly', value: 80 }],
+  scores: { str: 20, dex: 17, con: 17, int: 8, wis: 14, cha: 11 },
+  saves: { fort: 8, ref: 8, will: 6 },
+  skills: [{ name: 'Perception', bonus: 12 }],
+  resistances: ['acid 10'], immunities: ['fire'], vulnerabilities: ['cold'],
+  conditionImmunities: ['sleep'], senses: [{ type: 'darkvision', range: 60 }],
+  languages: ['Draconic'], cr: '6', gear: 'scale mail',
+  specials: [{ name: 'Breath Weapon', kind: 'Su', description: 'A cone of flame.' }],
+  attacks: [{ name: 'Claws', kind: 'melee', bonus: 11, count: 2, damage: '1d6+5', damageType: 'slashing' }],
+});
+check('the AI PF1e path derives the same modifiers as the text parser',
+  pf1Transcribed.abilities, d.abilities);
+check('an ability printed as a dash comes back as no ability',
+  assist.pf1TranscriptionToData({
+    name: 'x', size: 'med', type: 'ooze', subtype: '', ac: 10, hp: 10, walkSpeed: 20,
+    otherSpeeds: [], scores: { str: 10, dex: 10, con: 10, int: 0, wis: 10, cha: 1 },
+    saves: { fort: 0, ref: 0, will: 0 }, skills: [], resistances: [], immunities: [],
+    vulnerabilities: [], conditionImmunities: [], senses: [], languages: [], cr: '1',
+    gear: '', specials: [], attacks: [],
+  }).abilities.int, -5);
+check('the AI PF1e path leaves the AC note empty, since PF1e prints arithmetic there',
+  pf1Transcribed.acNote, '');
+check('repeated attacks become a full attack here too',
+  pf1Transcribed.multiattack.counts, { claws: 2 });
+check('an AI-transcribed PF1e creature still converts through the tables',
+  convertCreature(pf1Transcribed).ac.value === 20, false);
+
+// PF2e: the model's numbers are the sheet's numbers, so the mapping copies.
+const pf2Transcribed = assist.pf2TranscriptionToSpec({
+  name: 'Silt Lurker', level: 6, size: 'lg', rarity: 'uncommon',
+  traits: ['aberration', 'amphibious'], perception: 16,
+  senses: [{ type: 'tremorsense', acuity: 'imprecise', range: 30 }],
+  languages: ['Aklo'], skills: [{ name: 'Athletics', mod: 16 }],
+  abilities: { str: 5, dex: 3, con: 4, int: -2, wis: 2, cha: -1 },
+  ac: 23, saves: { fort: 16, ref: 12, will: 11 }, hp: 105,
+  landSpeed: 20, otherSpeeds: [{ type: 'swim', value: 40 }], items: ['trident'],
+  immunities: ['poison'], resistances: [{ type: 'acid', value: 5 }], weaknesses: [{ type: 'cold', value: 5 }],
+  strikes: [{ name: 'Jaws', kind: 'melee', bonus: 18, damage: '2d8+9', damageType: 'piercing', traits: ['reach-10'], rangeIncrement: 0 }],
+  specials: [{ name: 'Silt Cloud', actionType: 'reaction', actions: 0, description: 'Clouds the water.' }],
+});
+check('the AI PF2e path copies the printed numbers',
+  [pf2Transcribed.ac.value, pf2Transcribed.hp.value, pf2Transcribed.perception.mod,
+    pf2Transcribed.strikes[0].bonus, pf2Transcribed.saves.fortitude.value],
+  [23, 105, 16, 18, 16]);
+check('it is marked direct and carries no tiers',
+  [pf2Transcribed.direct, pf2Transcribed.ac.tier], [true, null]);
+check('its provenance says the values were not re-derived',
+  pf2Transcribed.sourceNote.includes('copied as printed'), true);
+check('a reaction gets no action count', pf2Transcribed.specials[0].actions, null);
+
+// --- The plausibility guard --------------------------------------------------
+/*
+ * The backstop for the direct path: a transcription error reaches the sheet,
+ * so every value is compared against the published span for its level.
+ */
+const plausible = await load('plausibility.js');
+check('a faithfully transcribed creature raises nothing', plausible.implausibleStats(s), []);
+
+const transposed = structuredClone(s);
+transposed.ac.value = 32; // 23 with the digits swapped
+transposed.hp.value = 501; // 105 mistyped
+const flagged = plausible.implausibleStats(transposed);
+check('a transposed AC and a mistyped HP are both caught',
+  flagged.map((f) => f.stat).sort(), ['AC', 'HP']);
+check('the warning states the published range',
+  [Number.isFinite(flagged[0].min), Number.isFinite(flagged[0].max)], [true, true]);
+
+const wrongStrike = structuredClone(s);
+wrongStrike.strikes[0].bonus = 48;
+check('an impossible strike bonus is caught, named for its strike',
+  plausible.implausibleStats(wrongStrike).map((f) => f.stat), ['Jaws attack']);
+
+// Unusual creatures exist, so the bands are generous: a genuinely extreme
+// creature must not be flagged.
+const extremeButReal = structuredClone(s);
+extremeButReal.ac.value = tables.acFor(6, 'extreme');
+extremeButReal.hp.value = tables.hpSpan(6).max;
+extremeButReal.saves.fortitude.value = tables.saveFor(6, 'extreme');
+check('a legitimately extreme creature passes', plausible.implausibleStats(extremeButReal), []);
+const terribleButReal = structuredClone(s);
+terribleButReal.saves.will.value = tables.saveFor(6, 'terrible');
+terribleButReal.hp.value = tables.hpSpan(6).min;
+check('a legitimately feeble creature passes', plausible.implausibleStats(terribleButReal), []);
+
+/*
+ * The tolerance is what makes this a guard rather than a straitjacket:
+ * published creatures do sit a little outside their level's span, and
+ * flagging those would train the GM to ignore the warning. A value just past
+ * the span passes; one well past it does not.
+ */
+const justOutside = structuredClone(s);
+justOutside.ac.value = tables.acFor(6, 'extreme') + 2;
+check('a couple of points past the span is not worth flagging',
+  plausible.implausibleStats(justOutside), []);
+const wellOutside = structuredClone(s);
+wellOutside.ac.value = tables.acFor(6, 'extreme') + 8;
+check('well past the span is flagged',
+  plausible.implausibleStats(wellOutside).map((f) => f.stat), ['AC']);
+const justBelow = structuredClone(s);
+justBelow.saves.will.value = tables.saveFor(6, 'terrible') - 3;
+check('a little below the span is not worth flagging',
+  plausible.implausibleStats(justBelow), []);
+
 done('all three import sources behave, and only one converts');

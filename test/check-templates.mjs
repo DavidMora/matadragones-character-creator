@@ -230,18 +230,31 @@ check('the source select is bound', importHtml.includes('data-bind="import.sourc
 
 // A Pathfinder Second Edition block is transcribed, so the tier controls and
 // the AI paths that re-derive numbers must not be offered for it.
-const directHtml = shell({ ...context, directImport: true, aiParseAvailable: false });
+const directHtml = shell({ ...context, directImport: true });
 check('a direct import hides the tier controls',
   directHtml.includes('data-bind="import.tier.ac"'), false);
 check('a direct import explains why there is nothing to tune',
   directHtml.includes('MCC.Source.DirectNote'), true);
-check('a direct import offers no AI transcription',
-  directHtml.includes('data-action="aiParse"'), false);
+// AI transcription is offered for every system now, including the direct
+// one - a messy paste needs the fallback regardless of where it came from.
+check('a direct import still offers AI transcription',
+  shell({ ...context, directImport: true }).includes('data-action="aiParse"'), true);
 check('a direct import offers no ability rewrite',
   directHtml.includes('data-action="rewrite"'), false);
-check('a converted import keeps all three',
+check('a converted import keeps the tiers and the rewrite',
   [importHtml.includes('data-bind="import.tier.ac"'),
-    importHtml.includes('data-action="aiParse"'),
-    importHtml.includes('data-action="rewrite"')], [true, true, true]);
+    importHtml.includes('data-action="rewrite"')], [true, true]);
+
+// Transcribed numbers reach the sheet, so anything outside the published
+// span for the level is shown where the GM is already looking.
+const flaggedHtml = shell({
+  ...context,
+  directImport: true,
+  outliers: ['AC is 32; creatures of this level published between 15 and 27.'],
+});
+check('implausible transcribed values are surfaced in the panel',
+  flaggedHtml.includes('AC is 32') && flaggedHtml.includes('MCC.Plausible.Heading'), true);
+check('a clean import shows no plausibility panel',
+  importHtml.includes('MCC.Plausible.Heading'), false);
 
 done('templates render and their seams line up');

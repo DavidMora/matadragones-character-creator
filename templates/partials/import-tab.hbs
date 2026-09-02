@@ -44,6 +44,13 @@
           <p class="mcc-warning"><i class="fa-solid fa-triangle-exclamation"></i>
             {{localize 'MCC.Import.MissingField' field=this}}</p>
         {{/each}}
+        {{#if outliers}}
+          <p class="mcc-warning"><i class="fa-solid fa-scale-unbalanced"></i>
+            {{localize 'MCC.Plausible.Heading'}}</p>
+          {{#each outliers}}
+            <p class="mcc-warning mcc-outlier">{{this}}</p>
+          {{/each}}
+        {{/if}}
 
         {{#if directImport}}
           <p class="mcc-note"><i class="fa-solid fa-circle-check"></i>

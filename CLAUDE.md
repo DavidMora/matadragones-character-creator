@@ -16,6 +16,12 @@ apply here too.
   so they are transcribed and `convert.js` never sees them. Adding a source
   means declaring which it is in `sources.js`; routing a PF2e block through
   the converter would silently round every exact value to the nearest tier.
+- **A direct source has no backstop, so it gets one.** Converted values come
+  from the tables by construction; transcribed values do not, so
+  `plausibility.js` compares each against the published span for the level
+  and flags outliers. It warns and never blocks - unusual creatures exist -
+  and its tolerance is pinned from both sides in `check-sources.mjs`, because
+  a guard that fires on legitimate creatures trains the GM to ignore it.
 - **No imported number reaches the sheet** (converted sources). The pipeline is
   parse → classify (tier per stat, vs CR baselines in `baseline5e.js`) →
   read values from `tables.js` for the mapped level. The AI parse is a

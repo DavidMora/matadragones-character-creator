@@ -33,8 +33,14 @@ senses, immunities/resistances/weaknesses, and provenance notes.
 The module works with no API key at all. With one configured:
 
 - **Parse with AI** — a fallback for pastes the deterministic parser cannot
-  read. The model only transcribes into the same structure; the conversion
-  maths afterwards is identical, so it cannot set a single stat.
+  read, available for all three systems, each with its own transcription
+  schema. For a converted system the model only transcribes into the same
+  structure the parser produces and the conversion maths afterwards is
+  identical, so it cannot set a single stat. For a Pathfinder Second Edition
+  block the transcribed numbers genuinely do reach the sheet, so every value
+  is checked against the published span for the creature's level and anything
+  well outside it is flagged in the panel - which also catches a plain
+  misparse, not just a hallucination.
 - **Rewrite abilities in PF2e style** — polishes carried-over ability prose
   into remaster idiom. DCs and saves are recomputed from the tables after the
   rewrite, so a drifted number is corrected rather than trusted.

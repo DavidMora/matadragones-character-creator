@@ -70,9 +70,14 @@ const ALLOWED_NUMERIC = new Set([
 ]);
 
 for (const [name, schema] of Object.entries(SCHEMAS)) {
-  // The transcription schema is the one place numbers are the point: it
-  // copies a printed stat block, and the conversion re-derives every value.
-  if (name === 'transcription') continue;
+  /*
+   * Transcription schemas are the one place numbers are the point - they copy
+   * a printed stat block. Two different things keep them honest: for a
+   * converted source the conversion re-derives every value anyway, and for a
+   * direct one (PF2e, where the numbers really do reach the sheet)
+   * plausibility.js checks them against the published span for the level.
+   */
+  if (name.startsWith('transcription')) continue;
   for (const [path, node] of objects(schema, name)) {
     for (const [key, value] of Object.entries(node.properties)) {
       const full = `${path}.${key}`;

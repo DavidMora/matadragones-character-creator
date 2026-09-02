@@ -20,6 +20,7 @@ import { parsePF1eStatBlock } from './parsepf1.js';
 import { parsePF2eStatBlock } from './parsepf2.js';
 import { levelFromCR as levelFrom5eCR } from './baseline5e.js';
 import { levelFromCR as levelFromPF1CR } from './baselinepf1.js';
+import { aiParseStatBlock, aiParsePF1e, aiParsePF2e } from './ai/assist.js';
 
 export const SOURCES = {
   dnd5e: {
@@ -29,6 +30,7 @@ export const SOURCES = {
     placeholder: 'MCC.Source.Dnd5ePlaceholder',
     mode: 'converted',
     parse: parse5eStatBlock,
+    aiParse: aiParseStatBlock,
     levelFor: (data) => levelFrom5eCR(data.cr),
   },
   pf1e: {
@@ -38,6 +40,7 @@ export const SOURCES = {
     placeholder: 'MCC.Source.Pf1ePlaceholder',
     mode: 'converted',
     parse: parsePF1eStatBlock,
+    aiParse: aiParsePF1e,
     levelFor: (data) => levelFromPF1CR(data.cr),
   },
   pf2e: {
@@ -47,6 +50,7 @@ export const SOURCES = {
     placeholder: 'MCC.Source.Pf2ePlaceholder',
     mode: 'direct',
     parse: parsePF2eStatBlock,
+    aiParse: aiParsePF2e,
     levelFor: (spec) => spec.level,
   },
 };
@@ -60,6 +64,19 @@ export function sourceById(id) {
 /** True when this source's numbers are already Pathfinder Second Edition. */
 export function isDirect(id) {
   return sourceById(id).mode === 'direct';
+}
+
+/**
+ * Transcribe with the model, in whichever shape this source uses. A
+ * converted source returns the intermediate data; a direct one returns a
+ * finished spec, exactly as the deterministic parsers do.
+ */
+export async function aiParseWith(id, text, options) {
+  const source = sourceById(id);
+  const result = await source.aiParse(text, options);
+  return source.mode === 'direct'
+    ? { data: null, spec: result, mode: 'direct' }
+    : { data: result, spec: null, mode: 'converted' };
 }
 
 /**

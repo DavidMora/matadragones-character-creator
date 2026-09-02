@@ -7,7 +7,8 @@ import {
   SIZES,
 } from '../constants.js';
 import { LEVELS, ROAD_MAPS, TIERS } from '../tables.js';
-import { SOURCES, DEFAULT_SOURCE, isDirect, parseWith, sourceById } from '../sources.js';
+import { SOURCES, DEFAULT_SOURCE, aiParseWith, isDirect, parseWith, sourceById } from '../sources.js';
+import { implausibleStats, describeImplausible } from '../plausibility.js';
 import {
   classify,
   convertCreature,
@@ -17,7 +18,7 @@ import {
 import { createCreatureActor, applyArtwork } from '../actor.js';
 import { activeModel, hasApiKey } from '../ai/openai.js';
 import { generateImage, saveImage } from '../ai/image.js';
-import { aiParseStatBlock, aiRewriteAbilities, portraitPrompt } from '../ai/assist.js';
+import { aiRewriteAbilities, portraitPrompt } from '../ai/assist.js';
 import { generateConcept, conceptToDraft } from '../ai/concept.js';
 import { ROLES, budgetSummary, levelForRole } from '../encounter.js';
 import { validateDraft, budgetScore, publishedBand } from '../creature-rules.js';
@@ -58,6 +59,7 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
   #importText = '';
   #importSource = DEFAULT_SOURCE;
   #importDirectSpec = null;
+  #outliers = [];
   #parsed = null;
   #parseMissing = [];
   #parsedVia = null; // 'text' | 'ai'
@@ -166,7 +168,8 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
     context.sourcePlaceholder = game.i18n.localize(active.placeholder);
     // The AI transcription schema describes a 5e stat block, so it is only
     // offered where it can help.
-    context.aiParseAvailable = this.#importSource === 'dnd5e';
+    context.aiParseAvailable = true;
+    context.outliers = this.#outliers;
     context.directImport = isDirect(this.#importSource);
 
     if (this.#importDirectSpec) {
@@ -484,6 +487,7 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
         this.#parsed = null;
         this.#importDirectSpec = null;
         this.#parseMissing = [];
+        this.#outliers = [];
       }
       if (path[0] === 'level') this.#importLevel = Number(value);
       if (path[0] === 'tier') {
@@ -587,7 +591,27 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
       this.#parsed = result.data;
       this.#importLevel = sourceById(this.#importSource).levelFor(result.data);
     }
+    this.#warnIfImplausible();
     this.render();
+  }
+
+  /**
+   * A transcribed creature's numbers go to the sheet as read, so they are
+   * checked against the published span for their level. Converted creatures
+   * need no such check - their values come from the tables by construction.
+   */
+  #warnIfImplausible() {
+    if (!this.#importDirectSpec) {
+      this.#outliers = [];
+      return;
+    }
+    const outliers = implausibleStats(this.#importDirectSpec);
+    this.#outliers = describeImplausible(outliers);
+    if (outliers.length) {
+      ui.notifications.warn(
+        game.i18n.format('MCC.Plausible.Warning', { count: outliers.length }),
+      );
+    }
   }
 
   static async #onAiParse() {
@@ -597,13 +621,20 @@ export class CreatorView extends HandlebarsApplicationMixin(ApplicationV2) {
       return;
     }
     await this.#withBusy('parse', async (signal) => {
-      const data = await aiParseStatBlock(this.#importText, { signal });
-      this.#parsed = data;
-      this.#importDirectSpec = null;
+      const result = await aiParseWith(this.#importSource, this.#importText, { signal });
       this.#parseMissing = [];
       this.#parsedVia = 'ai';
-      this.#importLevel = sourceById('dnd5e').levelFor(data);
       this.#importTiers = {};
+      if (result.mode === 'direct') {
+        this.#importDirectSpec = result.spec;
+        this.#parsed = null;
+        this.#importLevel = result.spec.level;
+      } else {
+        this.#importDirectSpec = null;
+        this.#parsed = result.data;
+        this.#importLevel = sourceById(this.#importSource).levelFor(result.data);
+      }
+      this.#warnIfImplausible();
     });
   }
 

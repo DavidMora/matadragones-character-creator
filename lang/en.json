@@ -56,7 +56,7 @@
       "PastePlaceholder": "Paste the full stat block here, from the name line down to the last action…",
       "Parse": "Parse stat block",
       "AiParse": "Parse with AI",
-      "AiParseHint": "Sends the pasted text to OpenAI for transcription into the same structure the parser produces. The conversion maths afterwards is identical - the model cannot set a single stat.",
+      "AiParseHint": "Sends the pasted text to OpenAI to transcribe into the same structure the parser produces. For a converted system the conversion maths afterwards is identical, so the model cannot set a stat. For a Pathfinder Second Edition block the transcribed numbers do reach the sheet, so they are checked against the published span for the creature's level and anything unusual is flagged.",
       "ViaAI": "transcribed by AI",
       "NothingParsed": "Nothing to parse - paste a stat block first.",
       "ParsedSummary": "Parsed {name} ({type}, CR {cr}): {attacks} attack(s), {specials} abilities.",
@@ -294,6 +294,11 @@
       "Pf2eHint": "Transcribed, not converted: these are already this system’s numbers, so they are copied exactly rather than re-derived from tiers.",
       "Pf2ePlaceholder": "Paste the block, from the name and Creature level down to the last Strike…",
       "DirectNote": "This block is already Pathfinder Second Edition, so every value is copied as printed. There are no tiers to tune — re-deriving them would round an exact creature to the nearest tier."
+    },
+    "Plausible": {
+      "Heading": "These values look unusual for this creature's level. Transcribed numbers go to the sheet as read, so check them against your source:",
+      "Outlier": "{stat} is {value}; creatures of this level published between {min} and {max}.",
+      "Warning": "{count} transcribed value(s) look unusual for this level — see the import panel."
     }
   }
 }
