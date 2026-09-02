@@ -28,6 +28,32 @@ A Foundry VTT module for PF2e that builds creatures two ways:
 Both paths end in a real pf2e NPC actor with strikes, skills, abilities,
 senses, immunities/resistances/weaknesses, and provenance notes.
 
+## Requirements
+
+Foundry VTT **v13** or later, running the **Pathfinder Second Edition**
+system. Built and tested against Foundry 13.351 with pf2e 7.12.2. GM only —
+the window refuses to open for a player.
+
+An OpenAI key is **optional**. Everything deterministic — all three
+importers, the road-map builder, the tables, the compendium resolution —
+works without one. The key only enables the AI concept, the transcription
+fallback, the ability rewrite and the artwork.
+
+## Installing
+
+In Foundry: **Add-on Modules → Install Module**, and paste this manifest URL:
+
+```
+https://github.com/DavidMora/matadragones-character-creator/releases/latest/download/module.json
+```
+
+Then enable **Matadragones Character Creator** in your world's Manage Modules.
+
+To use the OpenAI features, open **Configure Settings → Module Settings** and
+paste your API key. It is stored in your browser only — never in the world
+database, where every player who joins could read it — so each GM enters
+their own once per browser.
+
 ## OpenAI (optional)
 
 The module works with no API key at all. With one configured:

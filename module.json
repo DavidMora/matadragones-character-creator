@@ -1,8 +1,8 @@
 {
   "id": "matadragones-character-creator",
   "title": "Matadragones Character Creator",
-  "description": "Build PF2e creatures with the GM Core Building Creatures road maps, or import a stat block from the world's oldest roleplaying game (5th edition) and get a level-appropriate PF2e version computed deterministically from the published tables. OpenAI is optional: parsing help for messy pastes, PF2e-idiom rewrites of ability text, and portrait/token artwork.",
-  "version": "0.1.0",
+  "description": "Build Pathfinder 2e creatures from the GM Core Building Creatures tables, or import a stat block from the world's oldest roleplaying game (5th edition), Pathfinder First Edition, or Pathfinder Second Edition. Foreign systems are converted deterministically - every value is read from the published tables rather than copied - while a PF2e block is transcribed as printed. Describe a creature in a sentence and OpenAI proposes the concept while the module owns every number; drag in spells, abilities and gear from any compendium. OpenAI is optional throughout.",
+  "version": "1.0.0",
   "authors": [
     {
       "name": "David Mora",
@@ -21,7 +21,7 @@
         "manifest": "https://raw.githubusercontent.com/foundryvtt/pf2e/master/system.json",
         "compatibility": {
           "minimum": "6.0.0",
-          "verified": "8.4.1"
+          "verified": "7.12.2"
         }
       }
     ]
@@ -42,5 +42,8 @@
   "url": "https://github.com/DavidMora/matadragones-character-creator",
   "manifest": "https://github.com/DavidMora/matadragones-character-creator/releases/latest/download/module.json",
   "download": "https://github.com/DavidMora/matadragones-character-creator/releases/latest/download/module.zip",
-  "bugs": "https://github.com/DavidMora/matadragones-character-creator/issues"
+  "readme": "https://github.com/DavidMora/matadragones-character-creator/blob/main/README.md",
+  "changelog": "https://github.com/DavidMora/matadragones-character-creator/blob/main/CHANGELOG.md",
+  "bugs": "https://github.com/DavidMora/matadragones-character-creator/issues",
+  "license": "https://github.com/DavidMora/matadragones-character-creator/blob/main/LICENSE"
 }

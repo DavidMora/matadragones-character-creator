@@ -1,11 +1,11 @@
 {
   "name": "matadragones-character-creator",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Foundry VTT module: build PF2e creatures from the Building Creatures tables, or import 5th-edition stat blocks deterministically.",
+  "description": "Foundry VTT module: build PF2e creatures from the Building Creatures tables, or import 5e, PF1e and PF2e stat blocks.",
   "scripts": {
-    "test": "node test/check-imports.mjs && node test/check-schemas.mjs && node test/check-tables.mjs && node test/check-parse.mjs && node test/check-sources.mjs && node test/check-spellnames.mjs && node test/check-convert.mjs && node test/check-actor.mjs && node test/check-equipment.mjs && node test/check-builder.mjs && node test/check-templates.mjs",
+    "test": "node test/check-manifest.mjs && node test/check-imports.mjs && node test/check-schemas.mjs && node test/check-tables.mjs && node test/check-parse.mjs && node test/check-sources.mjs && node test/check-spellnames.mjs && node test/check-convert.mjs && node test/check-actor.mjs && node test/check-equipment.mjs && node test/check-builder.mjs && node test/check-templates.mjs",
     "test:imports": "node test/check-imports.mjs",
     "test:tables": "node test/check-tables.mjs",
     "test:parse": "node test/check-parse.mjs",
@@ -16,9 +16,11 @@
     "test:equipment": "node test/check-equipment.mjs",
     "test:builder": "node test/check-builder.mjs",
     "test:schemas": "node test/check-schemas.mjs",
-    "test:sources": "node test/check-sources.mjs"
+    "test:sources": "node test/check-sources.mjs",
+    "test:manifest": "node test/check-manifest.mjs"
   },
   "devDependencies": {
     "handlebars": "^4.7.8"
-  }
+  },
+  "license": "MIT"
 }
