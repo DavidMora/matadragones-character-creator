@@ -31,7 +31,7 @@ senses, immunities/resistances/weaknesses, and provenance notes.
 ## Requirements
 
 Foundry VTT **v13** or later, running the **Pathfinder Second Edition**
-system. Built and tested against Foundry 13.351 with pf2e 7.12.2. GM only —
+system. Tested on Foundry 13.351 (pf2e 7.12.2) and 14.367 (pf2e 8.4.1). GM only —
 the window refuses to open for a player.
 
 An OpenAI key is **optional**. Everything deterministic — all three

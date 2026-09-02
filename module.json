@@ -11,7 +11,7 @@
   ],
   "compatibility": {
     "minimum": "13",
-    "verified": "13.351"
+    "verified": "14.367"
   },
   "relationships": {
     "systems": [
@@ -21,7 +21,7 @@
         "manifest": "https://raw.githubusercontent.com/foundryvtt/pf2e/master/system.json",
         "compatibility": {
           "minimum": "6.0.0",
-          "verified": "7.12.2"
+          "verified": "8.4.1"
         }
       }
     ]

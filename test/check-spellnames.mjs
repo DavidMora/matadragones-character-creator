@@ -16,16 +16,26 @@ import { makeCheck, load, root } from './harness.mjs';
 const { SPELL_RENAMES, modernizeSpellNames } = await load('spellnames.js');
 const { check, done } = makeCheck();
 
-const packNames = new Set(JSON.parse(readFileSync(path.join(root, 'test', 'spell-names.json'), 'utf8')));
-check('snapshot is a real index', packNames.size > 1000, true);
+/*
+ * Both supported system versions, because the module runs on either and a
+ * name can be added or removed between them: a rename that resolves on
+ * 8.4.1 and shadows a real spell on 7.12.2 would be wrong for half the users.
+ */
+const SNAPSHOTS = ['7.12.2', '8.4.1'];
+for (const version of SNAPSHOTS) {
+  const packNames = new Set(JSON.parse(
+    readFileSync(path.join(root, 'test', `spell-names-${version}.json`), 'utf8'),
+  ));
+  check(`pf2e ${version} snapshot is a real index`, packNames.size > 1000, true);
 
-const badTargets = Object.entries(SPELL_RENAMES).filter(([, target]) => !packNames.has(target));
-check('every rename target is a real compendium spell (bad: '
-  + badTargets.map(([k, v]) => `${k}->${v}`).join(', ') + ')', badTargets.length, 0);
+  const badTargets = Object.entries(SPELL_RENAMES).filter(([, target]) => !packNames.has(target));
+  check(`pf2e ${version}: every rename target is a real spell (bad: `
+    + badTargets.map(([k, v]) => `${k}->${v}`).join(', ') + ')', badTargets.length, 0);
 
-const shadowing = Object.keys(SPELL_RENAMES).filter((source) => packNames.has(source));
-check('no rename source shadows a real spell (bad: ' + shadowing.join(', ') + ')',
-  shadowing.length, 0);
+  const shadowing = Object.keys(SPELL_RENAMES).filter((source) => packNames.has(source));
+  check(`pf2e ${version}: no rename source shadows a real spell (bad: ${shadowing.join(', ')})`,
+    shadowing.length, 0);
+}
 
 check('no target is itself a source',
   Object.values(SPELL_RENAMES).some((name) => name in SPELL_RENAMES), false);

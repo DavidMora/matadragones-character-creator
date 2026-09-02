@@ -75,15 +75,17 @@ check('the system relationship carries compatibility',
   [Boolean(system?.compatibility?.minimum), Boolean(system?.compatibility?.verified)], [true, true]);
 
 /*
- * The verified system version is a claim about testing, and it was wrong once:
- * it read 8.4.1, copied from a sibling module, while this one had only ever
- * run against 7.12.2. Pin it so changing it is a deliberate act that comes
- * with actually running there.
+ * The verified versions are claims about testing, and one was wrong once: it
+ * read pf2e 8.4.1, copied from a sibling module, before this one had ever run
+ * there. It has since actually been run there - module active, actors created
+ * through all three importers, no console errors - which is what makes the
+ * same number legitimate now. Pin both so changing them stays a deliberate
+ * act that comes with running there.
  */
 check('the verified pf2e version is the one this module was tested against',
-  system.compatibility.verified, '7.12.2');
+  system.compatibility.verified, '8.4.1');
 check('the verified Foundry version is the one this module was tested against',
-  manifest.compatibility.verified, '13.351');
+  manifest.compatibility.verified, '14.367');
 
 // --- What ships ----------------------------------------------------------------
 /*

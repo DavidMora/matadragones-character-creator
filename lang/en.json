@@ -209,7 +209,7 @@
       "BadJson": "The API answer was not valid JSON: {message}",
       "NotAnImage": "That file is not an image.",
       "NoImageReturned": "The API returned no image data.",
-      "UploadFailed": "Saving the generated image into the world data directory failed."
+      "UploadFailed": "The artwork was generated but could not be saved into {dir}. Foundry reported the reason separately — commonly the GM account lacks the Upload Files permission, or the data directory is not writable."
     },
     "Concept": {
       "Heading": "Describe the creature",

@@ -16,13 +16,17 @@ const { parse5eStatBlock } = await load('parse5e.js');
 const { convertCreature } = await load('convert.js');
 const { check, done } = makeCheck();
 
-const catalogue = JSON.parse(readFileSync(path.join(root, 'test', 'equipment-names.json'), 'utf8'));
-check('snapshot is a real index', Object.keys(catalogue).length > 1000, true);
-
-// --- The name map resolves ---------------------------------------------------
-const badTargets = Object.entries(equip.GEAR_MAP).filter(([, target]) => !(target in catalogue));
-check('every gear mapping targets a real item (bad: '
-  + badTargets.map(([k, v]) => `${k}->${v}`).join(', ') + ')', badTargets.length, 0);
+// Both supported system versions - an item renamed between them would leave
+// half the users with an empty inventory.
+for (const version of ['7.12.2', '8.4.1']) {
+  const catalogue = JSON.parse(
+    readFileSync(path.join(root, 'test', `equipment-names-${version}.json`), 'utf8'),
+  );
+  check(`pf2e ${version} snapshot is a real index`, Object.keys(catalogue).length > 1000, true);
+  const badTargets = Object.entries(equip.GEAR_MAP).filter(([, target]) => !(target in catalogue));
+  check(`pf2e ${version}: every gear mapping targets a real item (bad: `
+    + badTargets.map(([k, v]) => `${k}->${v}`).join(', ') + ')', badTargets.length, 0);
+}
 
 /*
  * Pinned entry by entry, not just "the target resolves": an audit changed

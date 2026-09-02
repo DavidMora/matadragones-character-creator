@@ -2,7 +2,8 @@
 
 ## 1.0.0
 
-First release.
+First release. Tested on Foundry 13.351 with pf2e 7.12.2 and on Foundry
+14.367 with pf2e 8.4.1.
 
 ### Build a creature
 

@@ -16,7 +16,7 @@ A checklist of what has to be true, and how to confirm each without guessing.
 | The repository is public on GitHub | It has to be, or Foundry cannot fetch the manifest during review. |
 | `npm test` is green | 12 suites. The release workflow runs them and refuses to publish otherwise. |
 | The manifest describes an installable module | `npm run test:manifest` — every path it names exists, the version matches `package.json`, the URLs resolve to this repository, and the release zip's file list covers everything the manifest references. |
-| The version claims are true | `compatibility.verified` says Foundry **13.351**, and the pf2e relationship says **7.12.2**. Those are the versions this module was actually run against. If you test on another, change them *after* testing, not before — the manifest test pins both so the change is deliberate. |
+| The version claims are true | `compatibility.verified` says Foundry **14.367**, and the pf2e relationship says **8.4.1**. The module was run on both that pairing and Foundry 13.351 with pf2e 7.12.2. If you test on another, change them *after* testing, not before — the manifest test pins both so the change is deliberate. |
 | A licence is present | `LICENSE` (MIT), linked from the manifest. |
 | `CHANGELOG.md` has a section for the version | The workflow takes the release notes from it and fails if the section is missing or empty. |
 
@@ -162,4 +162,5 @@ true. When testing on a newer Foundry or pf2e:
    is a deliberate two-place change rather than a copied number.
 
 The pinning is there because the claim was wrong once: it read pf2e 8.4.1,
-copied from a sibling module, when this one had only ever run against 7.12.2.
+copied from a sibling module, before this one had ever run there. It has now
+actually been run there — which is what makes the same number legitimate.

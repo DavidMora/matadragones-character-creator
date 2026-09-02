@@ -173,7 +173,16 @@ export async function saveImage(b64, mimeType, filenameStem) {
   const binary = Uint8Array.from(atob(b64), (char) => char.charCodeAt(0));
   const file = new File([binary], name, { type: mimeType });
 
-  const result = await picker.upload('data', dir, file, {}, { notify: false });
-  if (!result?.path) throw new Error(game.i18n.localize('MCC.Errors.UploadFailed'));
+  /*
+   * `notify: false` used to suppress Foundry's own error here, so an upload
+   * that failed for a nameable reason - no upload permission, the file too
+   * large, a read-only data directory - surfaced as "saving the image
+   * failed" and nothing else. Foundry reports the reason itself; the module
+   * only adds what it was trying to do.
+   */
+  const result = await picker.upload('data', dir, file, {}, { notify: true });
+  if (!result?.path) {
+    throw new Error(game.i18n.format('MCC.Errors.UploadFailed', { dir }));
+  }
   return result.path;
 }
