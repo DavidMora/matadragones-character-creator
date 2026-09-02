@@ -4,11 +4,11 @@
  * and a nullable range, action items with actionType/actions, remaster
  * perception under system.perception.
  */
-import { makeCheck, load, installGlobals } from './harness.mjs';
+import { makeCheck, load, installGlobals, store } from './harness.mjs';
 import { SAMPLE_SPEC } from './fixtures.mjs';
 
 installGlobals();
-const { actorDataFromSpec } = await load('actor.js');
+const { actorDataFromSpec, applyArtwork } = await load('actor.js');
 const { parse5eStatBlock } = await load('parse5e.js');
 const { convertCreature } = await load('convert.js');
 const { FROST_REAVER } = await import('./fixtures.mjs');
@@ -189,5 +189,41 @@ check('spell-less spec makes no embedded calls',
   await attachSpellcasting(untouched, convertCreature(parse5eStatBlock(FROST_REAVER).data), { findSpell: fakeCompendium }),
   { created: 0, missing: [] });
 check('spell-less actor has no items added', untouched.items.length, 0);
+
+// --- Token artwork -----------------------------------------------------------
+/*
+ * Generated art is a rectangular illustration; a token drawn from it square
+ * shows its corners. Foundry's dynamic ring masks it into a circle, and the
+ * subject texture has to be set alongside texture.src because the ring draws
+ * the subject from its own field.
+ */
+function fakeArtActor() {
+  const updates = [];
+  return { updates, update: async (data) => { updates.push(data); return data; } };
+}
+
+store.tokenRing = true;
+const ringed = fakeArtActor();
+await applyArtwork(ringed, 'worlds/w/art/beast.png');
+check('the portrait and the token both use the image', [
+  ringed.updates[0].img, ringed.updates[0]['prototypeToken.texture.src'],
+], ['worlds/w/art/beast.png', 'worlds/w/art/beast.png']);
+check('the token is drawn inside a ring', [
+  ringed.updates[0]['prototypeToken.ring.enabled'],
+  ringed.updates[0]['prototypeToken.ring.subject.texture'],
+  ringed.updates[0]['prototypeToken.ring.subject.scale'],
+], [true, 'worlds/w/art/beast.png', 1]);
+check('the subject scale is inside the field\'s allowed range',
+  ringed.updates[0]['prototypeToken.ring.subject.scale'] >= 0.5, true);
+
+store.tokenRing = false;
+const plain = fakeArtActor();
+await applyArtwork(plain, 'worlds/w/art/beast.png');
+check('a GM who turns the ring off gets plain token art',
+  Object.keys(plain.updates[0]).some((k) => k.includes('ring')), false);
+check('and still gets the artwork itself',
+  [plain.updates[0].img, plain.updates[0]['prototypeToken.texture.src']],
+  ['worlds/w/art/beast.png', 'worlds/w/art/beast.png']);
+store.tokenRing = true;
 
 done('actor payloads match the pf2e schemas');

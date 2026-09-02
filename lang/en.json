@@ -190,6 +190,10 @@
       "OutputLanguage": {
         "Name": "Output language",
         "Hint": "Language for AI-generated prose (e.g. \"Spanish\"). Blank follows Foundry's language."
+      },
+      "TokenRing": {
+        "Name": "Rounded token frame",
+        "Hint": "Draw generated token art inside Foundry's dynamic token ring, so it appears as a circle rather than a square with its corners showing. Turn this off to leave generated tokens as plain art."
       }
     },
     "Usage": {

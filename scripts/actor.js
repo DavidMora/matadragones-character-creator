@@ -9,7 +9,7 @@
  * `damageRolls` record and a nullable `range` schema (not range traits, which
  * are legacy); abilities are `action` items with `actionType`/`actions`.
  */
-import { MODULE_ID } from './constants.js';
+import { MODULE_ID, SETTINGS } from './constants.js';
 import { attachSpellcasting } from './spells.js';
 import { attachGear } from './equipment.js';
 
@@ -258,10 +258,31 @@ export async function attachDroppedSpecials(actor, spec, { resolveUuid } = {}) {
   return { created: sources.length, missing };
 }
 
-/** Point both the portrait and the prototype token at a saved image. */
+/**
+ * Point the portrait and the prototype token at a saved image.
+ *
+ * Generated art is a rectangular illustration, which on the canvas would sit
+ * in a square with its corners showing. Foundry's dynamic token ring solves
+ * exactly this: with `ring.enabled`, the artwork is masked into a circle and
+ * drawn inside a ring that also carries the health and effect indicators.
+ * The subject texture is set alongside `texture.src` because the ring draws
+ * the subject from its own field, falling back to the token texture only
+ * when it is empty.
+ *
+ * The schema is identical on Foundry 13 and 14 (verified in both bundles).
+ * A GM whose table does not use rings can turn this off in settings, in
+ * which case the token is left as plain art.
+ */
 export async function applyArtwork(actor, path) {
-  await actor.update({
-    img: path,
-    'prototypeToken.texture.src': path,
-  });
+  const update = { img: path, 'prototypeToken.texture.src': path };
+
+  if (game.settings.get(MODULE_ID, SETTINGS.tokenRing)) {
+    update['prototypeToken.ring.enabled'] = true;
+    update['prototypeToken.ring.subject.texture'] = path;
+    // 1 shows the whole illustration inside the ring; the field's floor is
+    // 0.5, and anything below 1 crops in on the subject.
+    update['prototypeToken.ring.subject.scale'] = 1;
+  }
+
+  await actor.update(update);
 }

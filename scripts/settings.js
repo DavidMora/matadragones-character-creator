@@ -147,6 +147,21 @@ export function registerSettings() {
     choices: IMAGE_QUALITIES,
   });
 
+  /*
+   * Generated art is rectangular; a token drawn from it square shows its
+   * corners. Foundry's dynamic ring masks the art into a circle, which is
+   * what a token is expected to look like, so this is on by default.
+   */
+  game.settings.register(MODULE_ID, SETTINGS.tokenRing, {
+    name: 'MCC.Settings.TokenRing.Name',
+    hint: 'MCC.Settings.TokenRing.Hint',
+    scope: 'world',
+    config: true,
+    restricted: true,
+    type: Boolean,
+    default: true,
+  });
+
   game.settings.register(MODULE_ID, SETTINGS.outputLanguage, {
     name: 'MCC.Settings.OutputLanguage.Name',
     hint: 'MCC.Settings.OutputLanguage.Hint',

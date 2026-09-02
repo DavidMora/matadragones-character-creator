@@ -67,6 +67,7 @@ untouched.
 
 The module works with no API key. With one: transcribe a paste the
 deterministic parser cannot read (each system has its own schema), rewrite
-ability prose into PF2e idiom, and paint portrait and token artwork. The key
+ability prose into PF2e idiom, and paint portrait and token artwork (drawn
+inside Foundry's dynamic token ring, so it reads as a rounded frame). The key
 is stored client-side only — never in the world database, where every player
 could read it — and each call reports its token usage and estimated cost.

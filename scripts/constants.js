@@ -13,6 +13,7 @@ export const SETTINGS = {
   imageSize: 'openaiImageSize',
   imageQuality: 'openaiImageQuality',
   outputLanguage: 'outputLanguage',
+  tokenRing: 'tokenRing',
 };
 
 /**

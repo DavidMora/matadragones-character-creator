@@ -71,7 +71,10 @@ The module works with no API key at all. With one configured:
   into remaster idiom. DCs and saves are recomputed from the tables after the
   rewrite, so a drifted number is corrected rather than trusted.
 - **Portrait & token art** — paints an image from the creature's description
-  and applies it to both the actor portrait and the prototype token.
+  and applies it to both the actor portrait and the prototype token. The
+  token is drawn inside Foundry's dynamic ring, so generated art appears as a
+  rounded frame rather than a square showing its corners; turn off *Rounded
+  token frame* in the settings if your table prefers plain art.
 
 The key is stored client-side only (never in the world database, so players
 can never see it), requests go straight from the GM's browser to the API, and
