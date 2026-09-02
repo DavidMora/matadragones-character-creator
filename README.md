@@ -1,32 +1,22 @@
 # Matadragones Character Creator
 
-A Foundry VTT module for PF2e that builds creatures two ways:
+<p>
+  <img alt="Foundry v13–v14" src="https://img.shields.io/badge/Foundry-v13%20%E2%80%93%20v14-informational">
+  <img alt="System pf2e" src="https://img.shields.io/badge/system-pf2e-brown">
+  <img alt="MIT licence" src="https://img.shields.io/badge/licence-MIT-blue">
+  <img alt="Free forever" src="https://img.shields.io/badge/price-free%20forever-brightgreen">
+</p>
 
-- **Build from scratch** with the *Building Creatures* road maps from GM Core:
-  pick a level and a concept (brute, sniper, soldier, spellcaster…), and every
-  statistic is read from the published tables. Adjust any tier; the number
-  follows.
-- **Import a stat block** from one of three systems, chosen with a dropdown.
-  Two of them are *converted* and one is *transcribed*, which is a real
-  distinction rather than a detail:
+Build Pathfinder 2e creatures from the GM Core *Building Creatures* tables, or
+import a stat block from another system and get a level-appropriate PF2e
+version computed from those same tables.
 
-  - The **world's oldest roleplaying game, 5th edition** (2014 or 2024
-    layout) and **Pathfinder First Edition** are converted. Their printed
-    numbers describe a different game, so the importer never copies one onto
-    the sheet: it classifies each stat against what that system expects at
-    that challenge rating (high AC, low HP, extreme attack…), maps the rating
-    to a PF2e level, and reads the actual values from the Building Creatures
-    tables. The same paste always produces the same creature. PF1e prints its
-    saves, so Fortitude, Reflex and Will are ranked from the real numbers
-    rather than inferred from ability scores.
-  - A **Pathfinder Second Edition** block is transcribed. Its numbers already
-    *are* this system's numbers, so AC 23 stays AC 23. Putting them through
-    the tier machinery would round an exact creature to the nearest tier and
-    hand back something close but wrong, so that path is skipped entirely -
-    there are no tiers to tune, and the panel says so.
+![A 5th-edition stat block converted: the printed AC 16 becomes 27, the printed DC 17 becomes the level 9 DC 25, and every ability is remastered](docs/images/import-conversion.png)
 
-Both paths end in a real pf2e NPC actor with strikes, skills, abilities,
-senses, immunities/resistances/weaknesses, and provenance notes.
+Nothing above was copied from the paste. Each statistic was ranked against
+what a creature of that challenge rating is expected to have, and the value
+on the right was read from the published table for the target level — which
+is why changing the level or a tier changes every number with it.
 
 ## Requirements
 
@@ -102,6 +92,8 @@ A name with no compendium match is never guessed: it is listed in an
 
 ## Designing a creature from a sentence
 
+![The builder: a brief, the party it must challenge, and the creature the tables produce](docs/images/builder.png)
+
 The builder tab takes a brief - "an evil necromancer who raises the fallen
 mid-fight" - plus your party's level and size and the role you want the
 creature to play, and asks OpenAI for a *concept*: name, description, traits,
@@ -116,6 +108,8 @@ level and the chosen role through the published encounter-building tables
 the panel shows what the result costs in XP and how it rates against your
 party's budget before you create anything.
 
+![Every statistic is a tier; the number beside it comes from the table for the level](docs/images/tiers.png)
+
 Every draft - typed by hand or proposed by the model - is checked against the
 creature-building rules. Hard rules are the tables' own vocabulary (AC has no
 terrible column, HP has three tiers, spell DCs stop at moderate, levels run
@@ -125,6 +119,8 @@ whose power score falls outside the range the published road maps occupy -
 a band measured from those road maps, so anything the book endorses passes.
 
 ## Spells, abilities and gear
+
+![One editable list of each, filled by the AI, by dragging in documents, or by typing a name](docs/images/drop-zones.png)
 
 The builder keeps one editable list of each. Whatever the AI proposes lands
 there as rows you can tune - change a spell's frequency, drop an ability you
@@ -136,6 +132,15 @@ Dropped documents are cloned exactly as they are, so their rules elements
 keep working; names typed or proposed by the model are matched against the
 compendium when the actor is created. Dropped NPC attacks contribute their
 name and are re-statted from the tables like any other Strike.
+
+## The result
+
+![The finished creature: skills on the sheet, remastered abilities, strikes statted from the tables](docs/images/created-actor.png)
+
+A real pf2e NPC, not a text dump: skills live where the system keeps them so
+Grapple and `@Check` links roll correctly, strikes are `melee` items, spells
+resolve from the compendium into a real spellcasting entry, and gear lands in
+the inventory.
 
 ## Gear
 
