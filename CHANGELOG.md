@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.1
+
+- Added an explicit ownership and licensing notice. This module is unofficial
+  fan content, free and always will be: it claims no ownership of Pathfinder,
+  Dungeons & Dragons, or any other intellectual property, is not affiliated
+  with or endorsed by Paizo, Wizards of the Coast or Hasbro, and ships no
+  third-party stat blocks or published tables. See `NOTICE.md`.
+
 ## 1.0.0
 
 First release. Tested on Foundry 13.351 with pf2e 7.12.2 and on Foundry

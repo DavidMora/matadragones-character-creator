@@ -1,6 +1,6 @@
 {
   "name": "matadragones-character-creator",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "type": "module",
   "description": "Foundry VTT module: build PF2e creatures from the Building Creatures tables, or import 5e, PF1e and PF2e stat blocks.",

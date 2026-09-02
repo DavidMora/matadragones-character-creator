@@ -1,8 +1,8 @@
 {
   "id": "matadragones-character-creator",
   "title": "Matadragones Character Creator",
-  "description": "Build Pathfinder 2e creatures from the GM Core Building Creatures tables, or import a stat block from the world's oldest roleplaying game (5th edition), Pathfinder First Edition, or Pathfinder Second Edition. Foreign systems are converted deterministically - every value is read from the published tables rather than copied - while a PF2e block is transcribed as printed. Describe a creature in a sentence and OpenAI proposes the concept while the module owns every number; drag in spells, abilities and gear from any compendium. OpenAI is optional throughout.",
-  "version": "1.0.0",
+  "description": "Build Pathfinder 2e creatures from the GM Core Building Creatures tables, or import a stat block from the world's oldest roleplaying game (5th edition), Pathfinder First Edition, or Pathfinder Second Edition. Foreign systems are converted deterministically - every value is read from the published tables rather than copied - while a PF2e block is transcribed as printed. Describe a creature in a sentence and OpenAI proposes the concept while the module owns every number; drag in spells, abilities and gear from any compendium. OpenAI is optional throughout. Unofficial fan content, free and always will be: not affiliated with or endorsed by Paizo, Wizards of the Coast or Hasbro, and no third-party stat blocks or published tables are included.",
+  "version": "1.0.1",
   "authors": [
     {
       "name": "David Mora",

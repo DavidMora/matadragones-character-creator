@@ -185,3 +185,22 @@ hand.
 `npm test` — six suites, no Foundry needed: import graph, table consistency,
 parser fixtures (both layouts), conversion determinism, actor payloads against
 the pf2e schemas, and template/action wiring.
+
+## Legal
+
+**Unofficial fan content. Free, and always will be.**
+
+This module claims no ownership of any intellectual property it works with,
+and is not affiliated with, sponsored by, or endorsed by any rights holder.
+Pathfinder and related marks are trademarks of **Paizo Inc.**; this module is
+not published, endorsed, or specifically approved by Paizo. Dungeons &
+Dragons and D&D are trademarks of **Wizards of the Coast LLC** (**Hasbro,
+Inc.**); this is unofficial fan content and is neither approved nor endorsed
+by Wizards. Every other game or publisher named here is named for
+identification and compatibility only, and all trademarks belong to their
+respective owners.
+
+No third-party stat blocks or published tables ship with this module — it
+converts text you supply. The author's code is MIT licensed; the module is
+never sold, carries no advertising, and asks for nothing. See
+[NOTICE.md](NOTICE.md) for the full attribution.
