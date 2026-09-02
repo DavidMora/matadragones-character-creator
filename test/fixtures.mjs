@@ -203,3 +203,54 @@ Speed 20 feet, swim 40 feet
 Melee [one-action] jaws +18 (reach 10 feet), Damage 2d8+9 piercing plus 1d6 acid
 Ranged [one-action] spine +14 (range increment 30 feet), Damage 2d6+4 piercing
 Engulfing Silt The lurker drags a grabbed creature into the silt.`;
+
+/**
+ * A third 5e layout, from a community stat block generator: labels carry
+ * colons, the ability block is written vertically as score-then-modifier,
+ * the casting paragraph is not titled "Spellcasting", and the spell list
+ * uses "Cantrips:" and "1st (6):" rather than the rulebook's wording. Every
+ * one of those defeated the parser until this fixture existed.
+ */
+export const LICH_ARCHMAGE = `Wither-Crowned Archmage
+CR: 21
+Medium undead (wizard), lawful evil
+Armor Class: 18 (Robe of the Archmagi)
+Hit Points: 272 (32d8 + 128)
+Speed: 40 ft
+STR
+14 +2
+DEX
+16 +3
+CON
+18 +4
+INT
+26 +8
+WIS
+20 +5
+CHA
+16 +3
+Saving Throws: Con +12, Int +18, Wis +15
+Skills: Arcana +26, History +18, Perception +15
+Damage Resistances: Cold, Force, Lightning, Necrotic
+Damage Immunities: Poison
+Condition Immunities: Charmed, Exhaustion, Frightened, Paralyzed, Poisoned, Stunned
+Senses: Passive Perception 25
+Languages: Common, Celestial, Draconic, Elvish, Infernal
+Challenge Rating: 21 ( 33,000 XP)
+Proficiency Bonus: +7
+
+The archmage is a 20th-level spellcaster. Its spellcasting ability is Intelligence (spell save DC 26, +18 to hit with spell attacks). It has the following spells prepared.
+
+Cantrips: Chill Touch, Fire Bolt, Mage Hand, Prestidigitation
+
+1st (4): Detect Magic, Disguise Self, Shield
+
+2nd (3): Blindness/Deafness, Hold Person, Knock
+
+3rd (3): Blink, Counterspell, Dispel Magic
+
+9th (1): Meteor Swarm, Time Stop
+
+At Will: Counterspell
+
+Legendary Resistance (3/Day). If the archmage fails a saving throw, it can choose to succeed instead.`;

@@ -1,6 +1,6 @@
 /** The deterministic stat block parser, against both layouts. */
 import { makeCheck, load } from './harness.mjs';
-import { FROST_REAVER, EMBER_WISP, GLOOM_CALLER } from './fixtures.mjs';
+import { FROST_REAVER, EMBER_WISP, GLOOM_CALLER, LICH_ARCHMAGE } from './fixtures.mjs';
 
 const { parse5eStatBlock, damagePerRound, diceAverage } = await load('parse5e.js');
 const { check, done } = makeCheck();
@@ -85,6 +85,58 @@ check('caller spell groups', c.spellcasting.groups.map((g) => [g.kind, g.uses ??
 check('caller slot ranks', c.spellcasting.groups.filter((g) => g.kind === 'slots').map((g) => g.rank5e), [1, 2, 3]);
 check('spell attack action still extracted', c.attacks.map((a) => a.name), ['Shadow Claw']);
 check('no spellcasting on the spell-less reaver', r.spellcasting, null);
+
+// --- A third layout, from a community generator -------------------------------
+/*
+ * Everything here failed at once on a real block a user brought: the ability
+ * block laid out vertically, "Challenge Rating:" losing to the shorter
+ * "Challenge" label, a casting paragraph titled after the creature rather
+ * than "Spellcasting", and spell headings written "Cantrips:" and "1st (6):".
+ */
+const archmage = parse5eStatBlock(LICH_ARCHMAGE);
+check('community layout parses without gaps',
+  { ok: archmage.ok, missing: archmage.missing }, { ok: true, missing: [] });
+const a = archmage.data;
+check('a vertical ability block is read', a.abilities,
+  { str: 2, dex: 3, con: 4, int: 8, wis: 5, cha: 3 });
+check('and its scores survive too', a.scores.int, 26);
+check('"Challenge Rating:" is not eaten by the shorter "Challenge" label', a.cr, 21);
+check('colonised labels still parse', [a.ac, a.hp], [18, 272]);
+check('a casting paragraph titled after the creature is still spellcasting',
+  Boolean(a.spellcasting), true);
+check('"Cantrips:" and "Nth (n):" headings are read', a.spellcasting.groups.map(
+  (g) => [g.kind, g.rank5e ?? g.uses ?? null, g.spells.length],
+), [
+  ['cantrips', null, 4],
+  ['slots', 1, 3],
+  ['slots', 2, 3],
+  ['slots', 3, 3],
+  ['slots', 9, 2],
+  ['at-will', null, 1],
+]);
+check('slot counts come from the parenthesis', a.spellcasting.groups[1].slots, 4);
+// Names keep their printed case here; lowercasing and remastering happen in
+// the conversion, not the parse.
+check('a spell name containing a slash survives',
+  a.spellcasting.groups[2].spells, ['Blindness/Deafness', 'Hold Person', 'Knock']);
+check('the casting ability is read from the paragraph', a.spellcasting.ability, 'int');
+// The paragraph is found by its prose as well as its title: some blocks head
+// the section with a name that says nothing about casting at all.
+const oddlyTitled = parse5eStatBlock(`Hexbound Thing
+Medium fey, chaotic neutral
+Armor Class 15
+Hit Points 40 (9d8)
+STR 8 (-1) DEX 16 (+3) CON 10 (+0) INT 14 (+2) WIS 12 (+1) CHA 18 (+4)
+Senses passive Perception 11
+Languages Sylvan
+Challenge 5 (1,800 XP)
+Old Bargains. The thing is a 7th-level spellcaster using Charisma (spell save DC 15).
+Cantrips: Prestidigitation
+1st (3): Charm Person`);
+check('a casting section titled something else is still found',
+  Boolean(oddlyTitled.data.spellcasting), true);
+check('and its groups are read',
+  oddlyTitled.data.spellcasting.groups.map((g) => g.kind), ['cantrips', 'slots']);
 
 // --- Odds and ends -----------------------------------------------------------
 check('diceAverage handles flat and dice', [diceAverage('2d8+6'), diceAverage('7')], [15, 7]);

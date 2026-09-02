@@ -26,7 +26,7 @@ const NUMBER_WORDS = {
 const FIELD_LABELS = [
   'Armor Class', 'Hit Points', 'Saving Throws', 'Damage Vulnerabilities',
   'Damage Resistances', 'Damage Immunities', 'Condition Immunities',
-  'Proficiency Bonus', 'Vulnerabilities', 'Resistances', 'Immunities',
+  'Proficiency Bonus', 'Challenge Rating', 'Vulnerabilities', 'Resistances', 'Immunities',
   'Speed', 'Skills', 'Senses', 'Languages', 'Challenge', 'Gear', 'Initiative',
   'AC', 'HP', 'CR',
 ];
@@ -35,6 +35,7 @@ const SECTION_HEADERS = [
   'Traits', 'Actions', 'Bonus Actions', 'Reactions', 'Legendary Actions',
   'Lair Actions', 'Mythic Actions', 'Villain Actions',
 ];
+
 
 function normalise(text) {
   return String(text ?? '')
@@ -178,6 +179,19 @@ export function parse5eStatBlock(rawText) {
     data.abilities[key] = Number(m[3]);
     data.saves[key] = Number(m[4]);
   }
+  /*
+   * "STR 14 +2": the score and its modifier with no parentheses. `\s+` spans
+   * newlines, so this also reads the vertical layout some generators emit,
+   * where the label sits on its own line above its numbers. The lookahead
+   * stops it swallowing the 2024 tri-column form, which has a third number.
+   */
+  for (const m of text.matchAll(/\b(STR|DEX|CON|INT|WIS|CHA)\s+(\d+)\s+([+-]\d+)(?!\s+[+-]\d)/gi)) {
+    const key = m[1].toLowerCase();
+    if (data.abilities[key] !== undefined) continue;
+    data.scores[key] = Number(m[2]);
+    data.abilities[key] = Number(m[3]);
+  }
+
   // Bare header-row layout: a line of six names, then six "N (+M)" pairs.
   if (Object.keys(data.abilities).length < 6) {
     const headerAt = lines.findIndex((l) => /^STR\s+DEX\s+CON\s+INT\s+WIS\s+CHA$/i.test(l));
@@ -237,7 +251,7 @@ export function parse5eStatBlock(rawText) {
 
   data.languages = splitList(field('Languages')).filter((l) => !/^(-|none)$/i.test(l));
 
-  const crText = field('Challenge', 'CR');
+  const crText = field('Challenge Rating', 'Challenge', 'CR');
   if (crText) {
     data.crText = crText;
     data.cr = parseCR(crText);
@@ -315,7 +329,26 @@ export function reparseSpecials(data) {
  * "At will:", "Constant:", "3/day each:", "Cantrips (at will):",
  * "1st level (4 slots):" / "1st Level (4 Slots):".
  */
-const SPELL_GROUP_HEAD = /(cantrips\s*\(at will\)|at will|constant|(\d+)\s*\/\s*day(?:\s+each)?|(\d+)(?:st|nd|rd|th)[- ]?(?:level|rank)\s*\((\d+)\s*(?:\d+(?:st|nd|rd|th)-level\s+)?slots?\))\s*:/gi;
+/**
+ * Group headings a spell list uses. Publishers vary more than the two rulebook
+ * layouts suggest, so each alternative is spelled out:
+ *
+ *   "Cantrips (at will):"  "Cantrips:"
+ *   "At will:"             "Constant:"
+ *   "3/day each:"          "1/day:"
+ *   "1st level (4 slots):" "1st (6):"
+ */
+const SPELL_GROUP_HEAD = new RegExp(
+  '('
+  + 'cantrips(?:\\s*\\(at will\\))?'
+  + '|at will'
+  + '|constant'
+  + '|(\\d+)\\s*/\\s*day(?:\\s+each)?'
+  + '|(\\d+)(?:st|nd|rd|th)(?:[- ]?(?:level|rank))?'
+  + '\\s*\\((\\d+)\\s*(?:\\d+(?:st|nd|rd|th)-level\\s+)?(?:slots?)?\\)'
+  + ')\\s*:',
+  'gi',
+);
 
 /**
  * Pull structured spell lists out of every Spellcasting special.
@@ -326,7 +359,9 @@ const SPELL_GROUP_HEAD = /(cantrips\s*\(at will\)|at will|constant|(\d+)\s*\/\s*
  *    slots, spells: [names as printed] }`.
  */
 export function extractSpellcasting(data) {
-  const casters = (data.specials ?? []).filter((s) => /spellcasting/i.test(s.name));
+  const casters = (data.specials ?? []).filter(
+    (s) => /spellcast(?:ing|er)/i.test(s.name) || /spellcast(?:ing|er)/i.test(s.description),
+  );
   if (casters.length === 0) return null;
 
   let ability = null;
